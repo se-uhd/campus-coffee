@@ -8,10 +8,13 @@ import de.seuhd.campuscoffee.domain.model.objects.DomainModel
  *
  * @param domainClass class of the domain object (e.g., "Review")
  * @param id          the ID of the entity that was modified concurrently
+ * @param cause       the underlying optimistic-locking failure, if any
  */
 class ConcurrentUpdateException(
     domainClass: Class<out DomainModel<*>>,
-    id: Any?
+    id: Any?,
+    cause: Throwable? = null
 ) : RuntimeException(
-        "${domainClass.simpleName} with ID $id was modified concurrently. Please reload it and retry."
+        "${domainClass.simpleName} with ID $id was modified concurrently. Please reload it and retry.",
+        cause
     )

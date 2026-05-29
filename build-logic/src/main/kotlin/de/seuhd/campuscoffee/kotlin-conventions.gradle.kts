@@ -11,6 +11,7 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.spring")
     id("org.jlleitschuh.gradle.ktlint")
+    id("dev.detekt")
 }
 
 val libs = the<VersionCatalogsExtension>().named("libs")
@@ -28,6 +29,15 @@ kotlin {
 // .editorconfig. The plugin wires ktlintCheck into `check`, so the format gate rides on the build.
 configure<KtlintExtension> {
     version.set(libs.findVersion("ktlint-tool").get().requiredVersion)
+}
+
+// Static analysis with detekt: the plugin wires its task into `check` and fails the build on findings by
+// default. buildUponDefaultConfig layers any future project rules on detekt's defaults; the per-module
+// baseline grandfathers the current findings so only new ones break the build.
+detekt {
+    buildUponDefaultConfig = true
+    parallel = true
+    baseline = file("detekt-baseline.xml")
 }
 
 dependencies {

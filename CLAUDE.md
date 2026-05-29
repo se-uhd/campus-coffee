@@ -61,7 +61,7 @@ Domain-specific controllers/services extend these base classes (e.g., `PosContro
 gradle build
 ```
 
-### Format and Lint (ktlint)
+### Format, Lint, and Static Analysis (ktlint + detekt)
 
 The Kotlin sources are formatted and linted with ktlint (official Kotlin style, configured via the root
 `.editorconfig`). `gradle build` fails on violations because `ktlintCheck` is wired into `check`; apply
@@ -70,6 +70,11 @@ the fixes with:
 ```shell
 gradle ktlintFormat
 ```
+
+Static analysis runs via detekt (`dev.detekt`, pinned at `2.0.0-alpha.3`, the only release that supports
+Kotlin 2.3, which is also why Kotlin is pinned at 2.3.21). It is applied by the `kotlin-conventions`
+plugin and wired into `check`, so `gradle build` and CI fail on findings. A per-module
+`detekt-baseline.xml` grandfathers pre-existing findings; regenerate it with `gradle detektBaseline`.
 
 ### Start PostgreSQL Database
 
@@ -195,6 +200,7 @@ private helpers) keep conventional camelCase names.
 - **Kotlin** on JDK 25; nullability is expressed with Kotlin's nullable types.
 - **MapStruct** for object mapping (DTOs <-> domain models <-> entities), run via kapt.
 - **ktlint** for Kotlin formatting and linting (the official Kotlin style; `ktlintCheck` runs as part of `check`).
+- **detekt** for Kotlin static analysis (`dev.detekt` `2.0.0-alpha.3`, gated via `check`; a per-module baseline grandfathers existing findings).
 - **Bean Validation** (Jakarta Validation) for input validation (validation happens in the controllers based on the DTOs, before mapping them to domain models).
 - **OpenAPI/Swagger** (SpringDoc) for API documentation.
 - **Spring `@HttpExchange`** declarative HTTP client over `RestClient` (OpenStreetMap API integration).

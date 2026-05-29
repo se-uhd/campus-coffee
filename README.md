@@ -33,6 +33,10 @@ fails on formatting violations (the `ktlintCheck` task runs as part of `check`);
 gradle ktlintFormat
 ```
 
+Static analysis runs with [detekt](https://detekt.dev/), also wired into `check`, so `gradle build`
+fails on findings too. A per-module `detekt-baseline.xml` grandfathers the existing findings (regenerate
+it with `gradle detektBaseline`).
+
 ## Code coverage and mutation testing
 
 ### Code coverage (JaCoCo)

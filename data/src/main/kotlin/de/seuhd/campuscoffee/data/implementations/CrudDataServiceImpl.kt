@@ -66,8 +66,9 @@ abstract class CrudDataServiceImpl<DOMAIN : DomainModel<ID>, ENTITY : Entity, RE
             mapper.updateEntity(domain, entity)
             return mapper.fromEntity(repository.saveAndFlush(entity))
         } catch (e: OptimisticLockingFailureException) {
-            // the row changed between the read above and this write; surface it as a domain conflict
-            throw ConcurrentUpdateException(domainClass, domain.id)
+            // the row changed between the read above and this write; surface it as a domain conflict,
+            // keeping the original optimistic-locking failure as the cause
+            throw ConcurrentUpdateException(domainClass, domain.id, e)
         } catch (e: DataIntegrityViolationException) {
             // the database reports which named constraint was violated; map it to the declared domain field
             val violated = constraintNameOf(e)

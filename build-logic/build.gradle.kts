@@ -17,4 +17,5 @@ dependencies {
     implementation(libs.kotlin.allopen)
     implementation(libs.kotlin.noarg)
     implementation(libs.ktlint.gradle.plugin)
+    implementation(libs.detekt.gradle.plugin)
 }

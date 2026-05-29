@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ThrowsCount:CrudDataServiceImpl.kt:CrudDataServiceImpl$override fun upsert: DOMAIN</ID>
+    <ID>ThrowsCount:OsmDataServiceImpl.kt:OsmDataServiceImpl$override fun fetchNode: OsmNode</ID>
+    <ID>TooGenericExceptionCaught:OsmDataServiceImpl.kt:OsmDataServiceImpl$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>
