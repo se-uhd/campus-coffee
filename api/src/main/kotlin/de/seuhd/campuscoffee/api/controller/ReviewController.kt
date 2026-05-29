@@ -62,8 +62,8 @@ class ReviewController(
     @PostMapping("")
     override fun create(
         @Parameter(description = "Data of the review to create.", required = true)
-        @RequestBody @Valid reviewDto: ReviewDto,
-    ): ResponseEntity<ReviewDto> = super.create(reviewDto)
+        @RequestBody @Valid dto: ReviewDto
+    ): ResponseEntity<ReviewDto> = super.create(dto)
 
     @Operation
     @CrudOperation(operation = UPDATE, resource = REVIEW)
@@ -72,8 +72,8 @@ class ReviewController(
         @Parameter(description = "Unique identifier of the review to update.", required = true)
         @PathVariable id: Long,
         @Parameter(description = "Data of the review to update.", required = true)
-        @RequestBody @Valid reviewDto: ReviewDto,
-    ): ResponseEntity<ReviewDto> = super.update(id, reviewDto)
+        @RequestBody @Valid dto: ReviewDto
+    ): ResponseEntity<ReviewDto> = super.update(id, dto)
 
     @Operation
     @CrudOperation(operation = DELETE, resource = REVIEW)

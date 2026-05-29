@@ -11,10 +11,9 @@ plugins {
 dependencies {
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.tx)
-    implementation(libs.commons.lang3)
 
     // Generate Spring configuration metadata for the @ConfigurationProperties classes (ApprovalConfiguration);
-    // under Kotlin the processor runs via kapt, not the Java annotation processor.
+    // the processor runs via kapt.
     kapt(libs.spring.boot.configuration.processor)
 }
 

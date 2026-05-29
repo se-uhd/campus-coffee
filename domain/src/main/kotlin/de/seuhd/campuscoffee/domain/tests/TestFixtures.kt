@@ -9,7 +9,6 @@ import de.seuhd.campuscoffee.domain.model.objects.User
 import de.seuhd.campuscoffee.domain.ports.api.PosService
 import de.seuhd.campuscoffee.domain.ports.api.ReviewService
 import de.seuhd.campuscoffee.domain.ports.api.UserService
-import org.apache.commons.lang3.SerializationUtils
 import java.time.LocalDateTime
 
 /**
@@ -84,22 +83,19 @@ object TestFixtures {
     )
 
     @JvmStatic
-    fun getUserFixtures(): List<User> = USER_LIST.map { SerializationUtils.clone(it) }
-
+    fun getUserFixtures(): List<User> = USER_LIST
     @JvmStatic
     fun getUserFixturesForInsertion(): List<User> =
         getUserFixtures().map { it.copy(id = null, createdAt = null, updatedAt = null) }
 
     @JvmStatic
-    fun getPosFixtures(): List<Pos> = POS_LIST.map { SerializationUtils.clone(it) }
-
+    fun getPosFixtures(): List<Pos> = POS_LIST
     @JvmStatic
     fun getPosFixturesForInsertion(): List<Pos> =
         getPosFixtures().map { it.copy(id = null, createdAt = null, updatedAt = null) }
 
     @JvmStatic
-    fun getReviewFixtures(): List<Review> = REVIEW_LIST.map { SerializationUtils.clone(it) }
-
+    fun getReviewFixtures(): List<Review> = REVIEW_LIST
     @JvmStatic
     fun getReviewFixturesForInsertion(): List<Review> =
         getReviewFixtures().map { it.copy(id = null, createdAt = null, updatedAt = null) }

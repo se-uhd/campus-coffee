@@ -59,8 +59,8 @@ class UserController(
     @PostMapping("")
     override fun create(
         @Parameter(description = "Data of the user to create.", required = true)
-        @RequestBody @Valid userDto: UserDto,
-    ): ResponseEntity<UserDto> = super.create(userDto)
+        @RequestBody @Valid dto: UserDto
+    ): ResponseEntity<UserDto> = super.create(dto)
 
     @Operation
     @CrudOperation(operation = UPDATE, resource = USER)
@@ -69,8 +69,8 @@ class UserController(
         @Parameter(description = "Unique identifier of the user to update.", required = true)
         @PathVariable id: Long,
         @Parameter(description = "Data of the user to update.", required = true)
-        @RequestBody @Valid userDto: UserDto,
-    ): ResponseEntity<UserDto> = super.update(id, userDto)
+        @RequestBody @Valid dto: UserDto
+    ): ResponseEntity<UserDto> = super.update(id, dto)
 
     @Operation
     @CrudOperation(operation = DELETE, resource = USER)

@@ -11,7 +11,6 @@ import de.seuhd.campuscoffee.domain.ports.data.OsmDataService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientException
-import java.util.Optional
 
 /**
  * OSM data service that fetches node data from the OpenStreetMap API.
@@ -62,25 +61,25 @@ class OsmDataServiceImpl(
         val houseNumber = getRequiredTag(tags, "addr:housenumber", nodeId)
         val postcode = getRequiredTag(tags, "addr:postcode", nodeId)
         val amenityStr = getRequiredTag(tags, "amenity", nodeId)
-        val amenity = OsmAmenity.fromOsmValue(amenityStr).orElseThrow {
+        val amenity = OsmAmenity.fromOsmValue(amenityStr) ?: run {
             log.warn("OSM node {} has unsupported amenity type: {}", nodeId, amenityStr)
-            MissingFieldException(OsmNode::class.java, nodeId, "amenity")
+            throw MissingFieldException(OsmNode::class.java, nodeId, "amenity")
         }
 
-        val nameDe = Optional.ofNullable(tags["name:de"])
-        val nameEn = Optional.ofNullable(tags["name:en"])
-        val description = Optional.ofNullable(tags["description"])
+        val nameDe = tags["name:de"]
+        val nameEn = tags["name:en"]
+        val description = tags["description"]
 
         return OsmNode(
             nodeId = nodeId,
             // prioritize nameEn, then nameDe, then fall back to name
-            name = nameEn.or { nameDe }.orElse(name),
+            name = nameEn ?: nameDe ?: name,
             amenity = amenity,
             city = city,
             street = street,
             houseNumber = houseNumber,
             postcode = postcode,
-            description = description.orElse(DEFAULT_DESCRIPTION),
+            description = description ?: DEFAULT_DESCRIPTION
         )
     }
 
@@ -90,12 +89,12 @@ class OsmDataServiceImpl(
      * @throws MissingFieldException if the tag is missing
      */
     private fun getRequiredTag(tags: Map<String, String>, key: String, nodeId: Long): String =
-        Optional.ofNullable(tags[key]).orElseThrow {
+        tags[key] ?: run {
             log.warn(
                 "OSM node {} is missing required field: '{}'. Available tags: {}",
-                nodeId, key, tags.keys,
+                nodeId, key, tags.keys
             )
-            MissingFieldException(OsmNode::class.java, nodeId, key)
+            throw MissingFieldException(OsmNode::class.java, nodeId, key)
         }
 
     companion object {

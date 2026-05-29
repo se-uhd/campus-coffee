@@ -13,7 +13,6 @@ import org.springframework.core.ResolvableType
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.method.HandlerMethod
-import java.util.Optional
 
 /**
  * Populates OpenAPI operations from the [CrudOperation] annotation on the handler method: sets the
@@ -28,7 +27,7 @@ class CrudOperationCustomizer : OperationCustomizer {
             val params = Parameters(
                 crudOperation.operation,
                 crudOperation.resource,
-                Optional.ofNullable(crudOperation.externalResource.takeIf { it != NONE }),
+                crudOperation.externalResource.takeIf { it != NONE }
             )
             operation.summary = crudOperation.operation.summaryTemplate(params)
             operation.responses = createResponses(params, handlerMethod)
@@ -56,11 +55,7 @@ class CrudOperationCustomizer : OperationCustomizer {
      * Formats the description template with the regular or external resource name.
      */
     private fun formatDescription(spec: CrudResponseSpecification, params: Parameters): String {
-        val substitution = if (spec.isExternalResource && params.externalResourceName.isPresent) {
-            params.externalResourceName.get()
-        } else {
-            params.resourceName
-        }
+        val substitution = params.externalResourceName?.takeIf { spec.isExternalResource } ?: params.resourceName
         return String.format(spec.descriptionTemplate, substitution)
     }
 
@@ -74,25 +69,26 @@ class CrudOperationCustomizer : OperationCustomizer {
      * a reference for a single object, or null for void.
      */
     private fun createSuccessResponseContent(handlerMethod: HandlerMethod): Content? {
-        var returnType = ResolvableType.forMethodReturnType(handlerMethod.method)
-        if (returnType.rawClass == ResponseEntity::class.java) {
-            returnType = returnType.getGeneric(0)
-        }
-        val responseClass = returnType.rawClass!!
-
-        if (responseClass == Void::class.java || responseClass == Void.TYPE) {
-            return null
-        }
-
-        val schema: Schema<*> = if (responseClass == List::class.java) {
-            val itemClass = returnType.getGeneric(0).rawClass!!
-            Schema<Any>().apply {
-                type = "array"
-                items = Schema<Any>().`$ref`("#/components/schemas/" + itemClass.simpleName)
-            }
-        } else {
-            Schema<Any>().`$ref`("#/components/schemas/" + responseClass.simpleName)
+        val returnType = unwrapResponseEntity(ResolvableType.forMethodReturnType(handlerMethod.method))
+        val schema = when (returnType.rawClass) {
+            Void::class.java, Void.TYPE -> return null
+            List::class.java -> arraySchema(returnType.getGeneric(0))
+            else -> refSchema(returnType)
         }
         return Content().addMediaType("application/json", MediaType().schema(schema))
     }
+
+    /** Unwraps a `ResponseEntity<T>` return type to `T`; other return types pass through unchanged. */
+    private fun unwrapResponseEntity(returnType: ResolvableType): ResolvableType =
+        if (returnType.rawClass == ResponseEntity::class.java) returnType.getGeneric(0) else returnType
+
+    /** An array schema whose items reference the component schema of the given element type. */
+    private fun arraySchema(itemType: ResolvableType): Schema<*> = Schema<Any>().apply {
+        type = "array"
+        items = refSchema(itemType)
+    }
+
+    /** A reference (`$ref`) to the component schema for the given type. */
+    private fun refSchema(type: ResolvableType): Schema<*> =
+        Schema<Any>().`$ref`("#/components/schemas/" + type.rawClass!!.simpleName)
 }

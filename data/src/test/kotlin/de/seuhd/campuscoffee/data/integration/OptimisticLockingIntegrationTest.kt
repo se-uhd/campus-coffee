@@ -7,6 +7,7 @@ import de.seuhd.campuscoffee.domain.tests.TestFixtures
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 
 /**
@@ -39,9 +40,9 @@ class OptimisticLockingIntegrationTest : AbstractDataIntegrationTest() {
         }
         val id = reviewRepository.saveAndFlush(reviewEntity).id!!
 
-        // each findById returns a detached entity, so these are two independent snapshots at the initial version
-        val first = reviewRepository.findById(id).orElseThrow()
-        val stale = reviewRepository.findById(id).orElseThrow()
+        // each lookup returns a detached entity, so these are two independent snapshots at the initial version
+        val first = reviewRepository.findByIdOrNull(id)!!
+        val stale = reviewRepository.findByIdOrNull(id)!!
 
         // the first write succeeds and increments the version
         first.approvalCount = 1

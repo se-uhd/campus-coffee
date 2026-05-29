@@ -76,10 +76,9 @@ enum class Operation(
     ),
     IMPORT(
         { params ->
-            "Import ${params.resourceName} from " +
-                params.externalResourceName.orElseThrow {
-                    IllegalArgumentException("External resource name not set.")
-                } + "."
+            val externalName = params.externalResourceName
+                ?: throw IllegalArgumentException("External resource name not set.")
+            "Import ${params.resourceName} from $externalName."
         },
         listOf(
             CrudResponseSpecification(HttpStatus.CREATED, "The imported %s as a JSON object."),

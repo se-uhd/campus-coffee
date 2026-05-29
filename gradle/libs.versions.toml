@@ -8,7 +8,7 @@ mapstruct = "1.6.3"
 cucumber = "7.34.3"
 archunit = "1.4.1"
 wiremock = "3.13.1"
-# Testcontainers is no longer managed by the Boot 4 BOM at the coordinates used here.
+# Testcontainers is not managed by the Boot 4 BOM at these coordinates, so pin it explicitly.
 testcontainers = "1.21.4"
 jacoco = "0.8.13"
 pitest-tool = "1.25.1"
@@ -37,7 +37,6 @@ spring-boot-configuration-processor = { module = "org.springframework.boot:sprin
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 spring-tx = { module = "org.springframework:spring-tx" }
 spring-web = { module = "org.springframework:spring-web" }
-commons-lang3 = { module = "org.apache.commons:commons-lang3" }
 postgresql = { module = "org.postgresql:postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }

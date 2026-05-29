@@ -3,6 +3,7 @@ package de.seuhd.campuscoffee.api.controller
 import de.seuhd.campuscoffee.api.dtos.Dto
 import de.seuhd.campuscoffee.api.mapper.DtoMapper
 import de.seuhd.campuscoffee.domain.model.objects.DomainModel
+import de.seuhd.campuscoffee.domain.model.objects.persistedId
 import de.seuhd.campuscoffee.domain.ports.api.CrudService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
@@ -35,7 +36,7 @@ abstract class CrudController<DOMAIN : DomainModel<ID>, DTO : Dto<ID>, ID : Any>
     /** Creates a new resource and returns 201 Created with its location. */
     open fun create(dto: DTO): ResponseEntity<DTO> {
         val created = upsert(dto)
-        return ResponseEntity.created(getLocation(created.id!!)).body(created)
+        return ResponseEntity.created(getLocation(created.persistedId)).body(created)
     }
 
     /**

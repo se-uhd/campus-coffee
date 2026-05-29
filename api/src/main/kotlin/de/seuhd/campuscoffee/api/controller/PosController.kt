@@ -15,6 +15,7 @@ import de.seuhd.campuscoffee.api.openapi.Resource.OSM_NODE
 import de.seuhd.campuscoffee.api.openapi.Resource.POS
 import de.seuhd.campuscoffee.domain.model.enums.CampusType
 import de.seuhd.campuscoffee.domain.model.objects.Pos
+import de.seuhd.campuscoffee.domain.model.objects.persistedId
 import de.seuhd.campuscoffee.domain.ports.api.CrudService
 import de.seuhd.campuscoffee.domain.ports.api.PosService
 import io.swagger.v3.oas.annotations.Operation
@@ -65,8 +66,8 @@ class PosController(
     @PostMapping("")
     override fun create(
         @Parameter(description = "Data of the POS to create.", required = true)
-        @RequestBody @Valid posDto: PosDto,
-    ): ResponseEntity<PosDto> = super.create(posDto)
+        @RequestBody @Valid dto: PosDto
+    ): ResponseEntity<PosDto> = super.create(dto)
 
     @Operation
     @CrudOperation(operation = UPDATE, resource = POS)
@@ -75,8 +76,8 @@ class PosController(
         @Parameter(description = "Unique identifier of the POS to update.", required = true)
         @PathVariable id: Long,
         @Parameter(description = "Data of the POS to update.", required = true)
-        @RequestBody @Valid posDto: PosDto,
-    ): ResponseEntity<PosDto> = super.update(id, posDto)
+        @RequestBody @Valid dto: PosDto
+    ): ResponseEntity<PosDto> = super.update(id, dto)
 
     @Operation
     @CrudOperation(operation = DELETE, resource = POS)
@@ -105,6 +106,6 @@ class PosController(
         @RequestParam("campus_type") campusType: CampusType,
     ): ResponseEntity<PosDto> {
         val createdPos = posDtoMapper.fromDomain(posService.importFromOsmNode(nodeId, campusType))
-        return ResponseEntity.created(getLocation(createdPos.id!!)).body(createdPos)
+        return ResponseEntity.created(getLocation(createdPos.persistedId)).body(createdPos)
     }
 }

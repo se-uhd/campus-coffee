@@ -13,7 +13,7 @@ import org.hibernate.exception.ConstraintViolationException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.Optional
+import org.springframework.data.repository.findByIdOrNull
 
 /**
  * Base implementation of CRUD data service operations, providing common functionality reused across
@@ -48,9 +48,7 @@ abstract class CrudDataServiceImpl<DOMAIN : DomainModel<ID>, ENTITY : Entity, RE
         repository.findAll().map { mapper.fromEntity(it) }
 
     override fun getById(id: ID): DOMAIN =
-        repository.findById(id)
-            .map { mapper.fromEntity(it) }
-            .orElseThrow { NotFoundException(domainClass, id) }
+        repository.findByIdOrNull(id)?.let { mapper.fromEntity(it) } ?: throw NotFoundException(domainClass, id)
 
     /**
      * Upserts a domain object, converting database uniqueness violations into [DuplicationException]
@@ -69,8 +67,7 @@ abstract class CrudDataServiceImpl<DOMAIN : DomainModel<ID>, ENTITY : Entity, RE
             }
 
             // update existing entity (timestamps are set by the @PreUpdate callback)
-            val entity = repository.findById(id)
-                .orElseThrow { NotFoundException(domainClass, id) }
+            val entity = repository.findByIdOrNull(id) ?: throw NotFoundException(domainClass, id)
             mapper.updateEntity(domain, entity)
             return mapper.fromEntity(repository.saveAndFlush(entity))
         } catch (e: OptimisticLockingFailureException) {
@@ -109,13 +106,11 @@ abstract class CrudDataServiceImpl<DOMAIN : DomainModel<ID>, ENTITY : Entity, RE
      * @throws NotFoundException if no entity matches the query
      */
     protected fun findByFieldOrThrow(
-        queryFunction: () -> Optional<ENTITY>,
+        queryFunction: () -> ENTITY?,
         fieldName: String,
-        fieldValue: String,
+        fieldValue: String
     ): DOMAIN =
-        queryFunction()
-            .map { mapper.fromEntity(it) }
-            .orElseThrow { NotFoundException(domainClass, fieldName, fieldValue) }
+        queryFunction()?.let { mapper.fromEntity(it) } ?: throw NotFoundException(domainClass, fieldName, fieldValue)
 
     companion object {
         /**

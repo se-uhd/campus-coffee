@@ -3,6 +3,7 @@ package de.seuhd.campuscoffee.domain.implementation
 import de.seuhd.campuscoffee.domain.configuration.ApprovalConfiguration
 import de.seuhd.campuscoffee.domain.exceptions.ValidationException
 import de.seuhd.campuscoffee.domain.model.objects.Review
+import de.seuhd.campuscoffee.domain.model.objects.persistedId
 import de.seuhd.campuscoffee.domain.ports.api.ReviewService
 import de.seuhd.campuscoffee.domain.ports.data.CrudDataService
 import de.seuhd.campuscoffee.domain.ports.data.PosDataService
@@ -28,7 +29,7 @@ class ReviewServiceImpl(
     @Transactional
     override fun upsert(domainObject: Review): Review {
         // validate that the POS exists before creating or updating the review
-        val pos = posDataService.getById(domainObject.pos.id!!)
+        val pos = posDataService.getById(domainObject.pos.persistedId)
 
         // on creation, validate that this is the author's first review for this POS;
         // on update the filter would match the review being updated, so skip the check
@@ -55,11 +56,11 @@ class ReviewServiceImpl(
 
         // validate that the user exists
         val user = userDataService.getById(userId)
-        val approverId = user.id!!
+        val approverId = user.persistedId
 
         // validate that the review exists
         val reviewToApprove = reviewDataService.getById(reviewId)
-        val authorId = reviewToApprove.author.id!!
+        val authorId = reviewToApprove.author.persistedId
 
         // a user cannot approve their own review
         if (authorId == approverId) {

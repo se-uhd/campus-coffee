@@ -21,8 +21,8 @@ class PosRepositoryIntegrationTest : AbstractDataIntegrationTest() {
     fun findByNameReturnsMatchingPos() {
         val saved = posRepository.save(posEntityMapper.toEntity(TestFixtures.getPosFixturesForInsertion().first()))
 
-        assertThat(posRepository.findByName(saved.name!!).map { it.id }).contains(saved.id)
-        assertThat(posRepository.findByName("No Such POS")).isEmpty()
+        assertThat(posRepository.findByName(saved.name!!)?.id).isEqualTo(saved.id)
+        assertThat(posRepository.findByName("No Such POS")).isNull()
     }
 
     @Test

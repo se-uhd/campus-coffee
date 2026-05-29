@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 
 /**
  * Persists a POS with a house number suffix and reads it back from the database, confirming that the
@@ -27,7 +28,7 @@ class PosEntityMapperRoundTripTest : AbstractDataIntegrationTest() {
         // detach everything so the read comes from the database, not the persistence context
         entityManager.clear()
 
-        val reloaded = posRepository.findById(id).orElseThrow()
+        val reloaded = posRepository.findByIdOrNull(id)!!
         assertThat(reloaded.address!!.houseNumber).isEqualTo(99)
         assertThat(reloaded.address!!.houseNumberSuffix).isEqualTo('a')
         assertThat(posEntityMapper.fromEntity(reloaded).houseNumber).isEqualTo("99a")

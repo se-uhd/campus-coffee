@@ -40,11 +40,11 @@ interface CrudDataService<DOMAIN : DomainModel<ID>, ID> {
      * Creates a new entity or updates an existing one.
      * If the entity has an ID and exists, it is updated; if it has no ID, a new entity is created.
      *
-     * @param entity the entity to create or update
+     * @param domain the domain object to create or update
      * @return the persisted entity with updated timestamps and ID as a domain object
      * @throws NotFoundException if attempting to update an entity that does not exist
      */
-    fun upsert(entity: DOMAIN): DOMAIN
+    fun upsert(domain: DOMAIN): DOMAIN
 
     /**
      * Deletes an entity by its unique identifier.

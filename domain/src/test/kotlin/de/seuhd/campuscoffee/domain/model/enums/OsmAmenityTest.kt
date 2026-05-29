@@ -15,18 +15,18 @@ class OsmAmenityTest {
     @ParameterizedTest
     @EnumSource(OsmAmenity::class)
     fun resolvesEveryConstantFromItsLowercaseName(amenity: OsmAmenity) {
-        assertThat(OsmAmenity.fromOsmValue(amenity.name.lowercase())).contains(amenity)
+        assertThat(OsmAmenity.fromOsmValue(amenity.name.lowercase())).isEqualTo(amenity)
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["CAFE", "Cafe", "FAST_FOOD"])
     fun doesNotResolveUppercaseOrMixedCase(osmValue: String) {
-        assertThat(OsmAmenity.fromOsmValue(osmValue)).isEmpty()
+        assertThat(OsmAmenity.fromOsmValue(osmValue)).isNull()
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["hospital", "parking", "", "cafe "])
-    fun returnsEmptyForUnknownValues(osmValue: String) {
-        assertThat(OsmAmenity.fromOsmValue(osmValue)).isEmpty()
+    fun returnsNullForUnknownValues(osmValue: String) {
+        assertThat(OsmAmenity.fromOsmValue(osmValue)).isNull()
     }
 }
