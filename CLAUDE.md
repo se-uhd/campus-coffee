@@ -155,6 +155,16 @@ Run with Docker Compose:
 docker compose down && docker compose up
 ```
 
+### Dependency Updates
+
+Dependencies and tools are kept current automatically:
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs for the GitHub Actions and the Gradle
+  dependencies and plugins (resolved from the `libs.versions.toml` catalog), grouping minor and patch
+  bumps and keeping majors separate.
+- A weekly **`mise-outdated`** workflow runs `mise outdated` and opens or updates an issue when the
+  mise-managed tools (the JDK, Gradle, gcloud, and python in `mise.toml`) fall behind. Dependabot has no
+  mise ecosystem, so bump those pins by hand.
+
 ## Database
 
 - **Database**: PostgreSQL 17.
