@@ -2,12 +2,12 @@
 # Spring Boot BOM (imported in campuscoffee.java-conventions).
 [versions]
 spring-boot = "4.0.6"
-junit = "6.0.3"
-springdoc = "3.0.1"
+junit = "6.1.0"
+springdoc = "3.0.3"
 mapstruct = "1.6.3"
 cucumber = "7.34.3"
-archunit = "1.4.1"
-wiremock = "3.13.1"
+archunit = "1.4.2"
+wiremock = "3.13.2"
 # Testcontainers is not managed by the Boot 4 BOM at these coordinates, so pin it explicitly.
 testcontainers = "1.21.4"
 jacoco = "0.8.13"
