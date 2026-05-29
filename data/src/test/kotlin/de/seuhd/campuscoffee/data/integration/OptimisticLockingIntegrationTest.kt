@@ -1,0 +1,55 @@
+package de.seuhd.campuscoffee.data.integration
+
+import de.seuhd.campuscoffee.data.mapper.PosEntityMapper
+import de.seuhd.campuscoffee.data.mapper.UserEntityMapper
+import de.seuhd.campuscoffee.data.persistence.entities.ReviewEntity
+import de.seuhd.campuscoffee.domain.tests.TestFixtures
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+
+/**
+ * Optimistic locking on the review version column: two snapshots of the same review are loaded, the
+ * first save succeeds, and the second save fails because its version is now stale.
+ */
+class OptimisticLockingIntegrationTest : AbstractDataIntegrationTest() {
+
+    @Autowired
+    private lateinit var posEntityMapper: PosEntityMapper
+
+    @Autowired
+    private lateinit var userEntityMapper: UserEntityMapper
+
+    @Test
+    fun staleReviewUpdateIsRejected() {
+        val savedAuthor = userRepository.saveAndFlush(
+            userEntityMapper.toEntity(TestFixtures.getUserFixturesForInsertion().first()),
+        )
+        val savedPos = posRepository.saveAndFlush(
+            posEntityMapper.toEntity(TestFixtures.getPosFixturesForInsertion().first()),
+        )
+
+        val reviewEntity = ReviewEntity().apply {
+            pos = savedPos
+            author = savedAuthor
+            review = "Great place!"
+            approvalCount = 0
+            approved = false
+        }
+        val id = reviewRepository.saveAndFlush(reviewEntity).id!!
+
+        // each findById returns a detached entity, so these are two independent snapshots at the initial version
+        val first = reviewRepository.findById(id).orElseThrow()
+        val stale = reviewRepository.findById(id).orElseThrow()
+
+        // the first write succeeds and increments the version
+        first.approvalCount = 1
+        reviewRepository.saveAndFlush(first)
+
+        // the second write carries the now-outdated version and must fail
+        stale.approvalCount = 2
+        assertThatThrownBy { reviewRepository.saveAndFlush(stale) }
+            .isInstanceOf(ObjectOptimisticLockingFailureException::class.java)
+    }
+}

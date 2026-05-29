@@ -35,43 +35,4 @@ data class ReviewDto(
     val review: String?,
 
     val approved: Boolean? = null, // missing when creating a new review
-) : Dto<Long> {
-
-    // --- temporary bridges so the still-Java mapper and tests keep compiling; removed once they are Kotlin ---
-    fun id() = id
-    fun createdAt() = createdAt
-    fun updatedAt() = updatedAt
-    fun posId() = posId
-    fun authorId() = authorId
-    fun review() = review
-    fun approved() = approved
-
-    fun toBuilder() = Builder()
-        .id(id).createdAt(createdAt).updatedAt(updatedAt)
-        .posId(posId).authorId(authorId).review(review).approved(approved)
-
-    class Builder {
-        private var id: Long? = null
-        private var createdAt: LocalDateTime? = null
-        private var updatedAt: LocalDateTime? = null
-        private var posId: Long? = null
-        private var authorId: Long? = null
-        private var review: String? = null
-        private var approved: Boolean? = null
-
-        fun id(v: Long?) = apply { id = v }
-        fun createdAt(v: LocalDateTime?) = apply { createdAt = v }
-        fun updatedAt(v: LocalDateTime?) = apply { updatedAt = v }
-        fun posId(v: Long?) = apply { posId = v }
-        fun authorId(v: Long?) = apply { authorId = v }
-        fun review(v: String?) = apply { review = v }
-        fun approved(v: Boolean?) = apply { approved = v }
-
-        fun build() = ReviewDto(id, createdAt, updatedAt, posId, authorId, review, approved)
-    }
-
-    companion object {
-        @JvmStatic
-        fun builder() = Builder()
-    }
-}
+) : Dto<Long>

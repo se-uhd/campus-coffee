@@ -21,35 +21,4 @@ data class ErrorResponse(
     val statusMessage: String? = null,
     val timestamp: LocalDateTime? = null,
     val path: String? = null,
-) {
-    // --- temporary bridges so the still-Java GlobalExceptionHandler and tests keep compiling ---
-    fun errorCode() = errorCode
-    fun message() = message
-    fun statusCode() = statusCode
-    fun statusMessage() = statusMessage
-    fun timestamp() = timestamp
-    fun path() = path
-
-    class Builder {
-        private var errorCode: String? = null
-        private var message: String? = null
-        private var statusCode: Int? = null
-        private var statusMessage: String? = null
-        private var timestamp: LocalDateTime? = null
-        private var path: String? = null
-
-        fun errorCode(v: String?) = apply { errorCode = v }
-        fun message(v: String?) = apply { message = v }
-        fun statusCode(v: Int?) = apply { statusCode = v }
-        fun statusMessage(v: String?) = apply { statusMessage = v }
-        fun timestamp(v: LocalDateTime?) = apply { timestamp = v }
-        fun path(v: String?) = apply { path = v }
-
-        fun build() = ErrorResponse(errorCode!!, message, statusCode!!, statusMessage, timestamp, path)
-    }
-
-    companion object {
-        @JvmStatic
-        fun builder() = Builder()
-    }
-}
+)

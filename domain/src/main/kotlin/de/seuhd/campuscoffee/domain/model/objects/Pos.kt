@@ -33,59 +33,7 @@ data class Pos(
         }
     }
 
-    // --- temporary bridges so the still-Java tests keep compiling; removed once the tests are Kotlin ---
-    fun id() = id
-    fun createdAt() = createdAt
-    fun updatedAt() = updatedAt
-    fun name() = name
-    fun description() = description
-    fun type() = type
-    fun campus() = campus
-    fun street() = street
-    fun houseNumber() = houseNumber
-    fun postalCode() = postalCode
-    fun city() = city
-
-    fun toBuilder() = Builder()
-        .id(id).createdAt(createdAt).updatedAt(updatedAt)
-        .name(name).description(description).type(type).campus(campus)
-        .street(street).houseNumber(houseNumber).postalCode(postalCode).city(city)
-
-    class Builder {
-        private var id: Long? = null
-        private var createdAt: LocalDateTime? = null
-        private var updatedAt: LocalDateTime? = null
-        private var name: String? = null
-        private var description: String? = null
-        private var type: PosType? = null
-        private var campus: CampusType? = null
-        private var street: String? = null
-        private var houseNumber: String? = null
-        private var postalCode: Int? = null
-        private var city: String? = null
-
-        fun id(v: Long?) = apply { id = v }
-        fun createdAt(v: LocalDateTime?) = apply { createdAt = v }
-        fun updatedAt(v: LocalDateTime?) = apply { updatedAt = v }
-        fun name(v: String) = apply { name = v }
-        fun description(v: String) = apply { description = v }
-        fun type(v: PosType) = apply { type = v }
-        fun campus(v: CampusType) = apply { campus = v }
-        fun street(v: String) = apply { street = v }
-        fun houseNumber(v: String) = apply { houseNumber = v }
-        fun postalCode(v: Int) = apply { postalCode = v }
-        fun city(v: String) = apply { city = v }
-
-        fun build() = Pos(
-            id, createdAt, updatedAt, name!!, description!!, type!!, campus!!,
-            street!!, houseNumber!!, postalCode!!, city!!,
-        )
-    }
-
     companion object {
-        @JvmStatic
-        fun builder() = Builder()
-
         // see https://github.com/zauberware/postal-codes-json-xml-csv/blob/master/data/DE.zip
         // visible to tests so they derive boundary inputs from these bounds instead of duplicating them
         internal const val MIN_POSTAL_CODE = 1067

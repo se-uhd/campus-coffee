@@ -5,7 +5,6 @@ spring-boot = "4.0.6"
 junit = "6.0.3"
 springdoc = "3.0.1"
 mapstruct = "1.6.3"
-lombok-mapstruct-binding = "0.2.0"
 cucumber = "7.34.3"
 archunit = "1.4.1"
 wiremock = "3.13.1"
@@ -16,6 +15,8 @@ pitest-tool = "1.25.1"
 pitest-junit5 = "1.2.3"
 # Kotlin: >= 2.3.0 is required for jvmTarget 25; overrides the Boot 4 BOM's managed Kotlin stdlib.
 kotlin = "2.3.20"
+# Kotlin-friendly Mockito wrappers (whenever, reified any/mock); not managed by the Boot BOM.
+mockito-kotlin = "5.4.0"
 # Gradle plugins
 dependency-management = "1.1.7"
 pitest-plugin = "1.19.0"
@@ -36,8 +37,6 @@ spring-boot-configuration-processor = { module = "org.springframework.boot:sprin
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 spring-tx = { module = "org.springframework:spring-tx" }
 spring-web = { module = "org.springframework:spring-web" }
-lombok = { module = "org.projectlombok:lombok" }
-jspecify = { module = "org.jspecify:jspecify" }
 commons-lang3 = { module = "org.apache.commons:commons-lang3" }
 postgresql = { module = "org.postgresql:postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core" }
@@ -48,12 +47,12 @@ assertj-core = { module = "org.assertj:assertj-core" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 mockito-core = { module = "org.mockito:mockito-core" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 
 # Explicitly versioned (not in the BOMs)
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
-lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }
 cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
 cucumber-junit = { module = "io.cucumber:cucumber-junit", version.ref = "cucumber" }
 cucumber-junit-platform-engine = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }
@@ -69,7 +68,6 @@ pitest-gradle-plugin = { module = "info.solidsoft.gradle.pitest:gradle-pitest-pl
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
 kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
-kotlin-lombok = { module = "org.jetbrains.kotlin:kotlin-lombok", version.ref = "kotlin" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

@@ -18,11 +18,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 @ConditionalOnMissingBean // prevent IntelliJ warning about duplicate beans
 abstract class ReviewDtoMapper : DtoMapper<Review, ReviewDto> {
 
+    // internal (not protected): MapStruct's generated subclass and the same-module test both inject these;
+    // Kotlin's protected, unlike Java's, is not visible to the same-package test
     @Autowired
-    protected lateinit var posService: PosService
+    internal lateinit var posService: PosService
 
     @Autowired
-    protected lateinit var userService: UserService
+    internal lateinit var userService: UserService
 
     @Mapping(target = "posId", source = "pos.id")
     @Mapping(target = "authorId", source = "author.id")

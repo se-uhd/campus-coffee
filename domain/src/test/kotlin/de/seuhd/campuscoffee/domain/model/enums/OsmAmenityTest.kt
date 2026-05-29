@@ -1,0 +1,32 @@
+package de.seuhd.campuscoffee.domain.model.enums
+
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
+
+/**
+ * Tests [OsmAmenity.fromOsmValue], which resolves an OpenStreetMap amenity string to its enum
+ * constant. The parsing lives in the domain module, so it is pinned by a domain-local test rather
+ * than only through the data-layer OSM tests.
+ */
+class OsmAmenityTest {
+
+    @ParameterizedTest
+    @EnumSource(OsmAmenity::class)
+    fun resolvesEveryConstantFromItsLowercaseName(amenity: OsmAmenity) {
+        assertThat(OsmAmenity.fromOsmValue(amenity.name.lowercase())).contains(amenity)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["CAFE", "Cafe", "FAST_FOOD"])
+    fun doesNotResolveUppercaseOrMixedCase(osmValue: String) {
+        assertThat(OsmAmenity.fromOsmValue(osmValue)).isEmpty()
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["hospital", "parking", "", "cafe "])
+    fun returnsEmptyForUnknownValues(osmValue: String) {
+        assertThat(OsmAmenity.fromOsmValue(osmValue)).isEmpty()
+    }
+}

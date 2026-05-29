@@ -43,10 +43,12 @@ tasks.named("jar") {
 // `gradle :application:pitest -Pmutation`.
 configure<PitestPluginExtension> {
     targetClasses.set(listOf("de.seuhd.campuscoffee.api.*", "de.seuhd.campuscoffee.data.*"))
+    // The api/data production classes are Kotlin, so their bytecode is under classes/kotlin/main; the
+    // only classes under classes/java/main are the kapt-generated *MapperImpl, which are excluded anyway.
     additionalMutableCodePaths.set(
         listOf(
-            project(":api").layout.buildDirectory.dir("classes/java/main").get().asFile,
-            project(":data").layout.buildDirectory.dir("classes/java/main").get().asFile,
+            project(":api").layout.buildDirectory.dir("classes/kotlin/main").get().asFile,
+            project(":data").layout.buildDirectory.dir("classes/kotlin/main").get().asFile,
         )
     )
 }

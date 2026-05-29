@@ -11,11 +11,7 @@ import org.springframework.stereotype.Component
 class HouseNumberConverter {
 
     /** The numeric house number and an optional single suffix character. */
-    data class Parts(val number: Int?, val suffix: Char?) {
-        // temporary bridges so the still-Java HouseNumberConverterTest keeps compiling
-        fun number() = number
-        fun suffix() = suffix
-    }
+    data class Parts(val number: Int?, val suffix: Char?)
 
     /**
      * Splits a house number into its numeric part and optional letter suffix (the 'a' in "21a",

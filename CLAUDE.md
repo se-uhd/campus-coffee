@@ -111,9 +111,10 @@ gradle test --tests "PosServiceTest.testMethodName"
 - **Mutation testing (PITest)**: opt-in and local via the `-Pmutation` property and the per-module
   `pitest` task (e.g. `gradle :domain:pitest -Pmutation`). Each module runs PIT against its own tests and
   writes its own report under `<module>/build/reports/pitest/index.html`: `domain` mutates `domain.*`,
-  `api` mutates `api.*`, and `data` mutates `data.*`. The application cross-module run (mutating
-  `api.*`/`data.*` against the system and acceptance tests, as the Maven build did) is a pending
-  follow-up. The generated `*MapperImpl` classes are excluded from mutation, mirroring the JaCoCo gate.
+  `api` mutates `api.*`, and `data` mutates `data.*`. The `application` cross-module run
+  (`gradle :application:pitest -Pmutation`) additionally mutates `api.*`/`data.*` against the system and
+  acceptance tests, as the Maven build did; it adds the `api`/`data` `classes/kotlin/main` directories as
+  `additionalMutableCodePaths`. The generated `*MapperImpl` classes are excluded from mutation, mirroring the JaCoCo gate.
   Per-module `targetClasses` live in each module's `build.gradle.kts`; shared config is in the
   `campuscoffee.pitest-conventions` convention plugin. Select the mutator group with
   `-Ppitest.mutators=DEFAULTS|STRONGER|ALL`.

@@ -1,9 +1,9 @@
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.process.CommandLineArgumentProvider
 
-// Shared Java configuration for the library/application modules: the Java 25 toolchain, the Spring
-// Boot BOM, Lombok + JSpecify + the Spring config processor, and the test JVM args. JaCoCo's agent
-// is added by campuscoffee.jacoco-conventions.
+// Shared configuration for the library/application modules: the Java 25 toolchain (also used by the
+// Kotlin compilation), the Spring Boot BOM, and the test JVM args. JaCoCo's agent is added by
+// campuscoffee.jacoco-conventions.
 plugins {
     `java-library`
     id("io.spring.dependency-management")
@@ -49,17 +49,8 @@ dependencies {
     // 1.x transitively, which clashes with the JUnit 6 that Spring 7 requires.
     testImplementation(enforcedPlatform(libs.findLibrary("junit-bom").get()))
     testImplementation(libs.findLibrary("spring-boot-starter-test").get())
+    testImplementation(libs.findLibrary("mockito-kotlin").get())
     testRuntimeOnly(libs.findLibrary("junit-platform-launcher").get())
-
-    compileOnly(libs.findLibrary("lombok").get())
-    annotationProcessor(libs.findLibrary("lombok").get())
-    testCompileOnly(libs.findLibrary("lombok").get())
-    testAnnotationProcessor(libs.findLibrary("lombok").get())
-
-    compileOnly(libs.findLibrary("jspecify").get())
-    testCompileOnly(libs.findLibrary("jspecify").get())
-
-    annotationProcessor(libs.findLibrary("spring-boot-configuration-processor").get())
 }
 
 // Mockito's agent is the mockito-core jar itself; resolve just that jar on a dedicated
