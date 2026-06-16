@@ -16,7 +16,7 @@ demo (see [Deployment](#deployment)), restrict access — e.g., deploy to Cloud 
 
 The approval workflow inherits this gap: approvals are anonymous counts, so the same user can approve
 a review repeatedly (see [Approve reviews](#approve-reviews)). The rework, tracking approvers per user, only becomes meaningful once identity is trustworthy. It is
-therefore deferred to the same iteration and marked as `TODO(auth)` in `ReviewServiceImpl`.
+therefore deferred to the same iteration and marked as `TODO (Exercise 5)` in `ReviewServiceImpl`.
 
 ## Prerequisites
 
@@ -99,6 +99,20 @@ curl --request PUT http://localhost:8080/api/dev/data
 # clear all data
 curl --request DELETE http://localhost:8080/api/dev/data
 ```
+
+The fixture dataset seeds four users with known passwords and cumulative role sets (an admin is also a
+moderator and a user). Passwords are stored only as hashes and are never returned in any response.
+
+| Login name      | Password               | Roles                        |
+| --------------- | ---------------------- | ---------------------------- |
+| `jane_doe`      | `aaaMbnPdFYDqkOpS3fVA` | `USER`, `MODERATOR`, `ADMIN` |
+| `maxmustermann` | `AmLtoD3r8lVdnwoLN1Nn` | `USER`, `MODERATOR`          |
+| `student2023`   | `ZwTwB8Hn8VkNLZec7bR1` | `USER`                       |
+| `lisa_lee`      | `lG6v9dGKZA5kfOHTFLNR` | `USER`                       |
+
+The seed also records `review_approvals` rows consistent with each review's approval count, so no
+seeded review has a non-zero count without matching approver rows. Security is currently permissive
+(every endpoint is open); enforcing authentication and authorization is the subject of the assignment.
 
 #### POS endpoints (/api/pos)
 
@@ -248,7 +262,7 @@ curl --request PUT 'http://localhost:8080/api/reviews/4/approve?user_id=1' # use
 However, users can approve the same review multiple times. This is a known limitation of the current
 implementation: The system only counts approvals and never records *who* approved, and without
 authentication the approver id is client-asserted anyway. The fix — recording approvers in a
-`review_approvals` table with a unique `(review_id, user_id)` constraint — is tracked as `TODO(auth)`
+`review_approvals` table with a unique `(review_id, user_id)` constraint — is tracked as `TODO (Exercise 5)`
 in `ReviewServiceImpl` and lands together with authentication/authorization (see
 [Scope](#scope-no-authentication-yet)):
 ```shell

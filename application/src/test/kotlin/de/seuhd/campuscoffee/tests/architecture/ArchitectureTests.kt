@@ -14,6 +14,10 @@ class ArchitectureTests {
             ClassFileImporter()
                 .importPackages("de.seuhd.campuscoffee") // imports all sub-packages
 
+        // the .security package holds the application's own wiring (Spring Security, JWT, UserDetailsService)
+        val applicationPackages =
+            arrayOf("de.seuhd.campuscoffee", "de.seuhd.campuscoffee.security..", "de.seuhd.campuscoffee.tests..")
+
         layeredArchitecture()
             .consideringAllDependencies()
             .layer("api")
@@ -23,7 +27,7 @@ class ArchitectureTests {
             .layer("data")
             .definedBy("de.seuhd.campuscoffee.data..")
             .layer("application")
-            .definedBy("de.seuhd.campuscoffee", "de.seuhd.campuscoffee.tests..")
+            .definedBy(*applicationPackages)
             .whereLayer("api")
             .mayOnlyBeAccessedByLayers("application")
             .whereLayer("domain")

@@ -74,10 +74,10 @@ class ReviewServiceImpl(
         approved: Boolean
     ): List<Review> = reviewDataService.filter(posDataService.getById(posId), approved)
 
-    // TODO(auth): once authentication/authorization exist, record who approved (a review_approvals
-    //  table with a unique (review_id, user_id) constraint) so a user can approve a review at most
-    //  once -- an anonymous count cannot enforce that, and the client-asserted userId parameter
-    //  below must come from the authenticated principal instead. See README "Approve reviews".
+    // TODO (Exercise 5): record who approved in the provided review_approvals table (unique
+    //  (review_id, user_id) via ReviewApprovalDataService) so a user can approve a review at most once,
+    //  and derive approvalCount/approved from it -- an anonymous count cannot enforce that. The approver
+    //  must come from the authenticated principal (Exercise 2), not the client-asserted userId below.
     @Transactional
     override fun approve(
         reviewId: Long,

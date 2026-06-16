@@ -4,6 +4,7 @@ import de.seuhd.campuscoffee.api.dtos.PosDto
 import de.seuhd.campuscoffee.api.dtos.ReviewDto
 import de.seuhd.campuscoffee.api.dtos.UserDto
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -28,9 +29,9 @@ object SystemTestUtils {
     /** The client bound to the running server, for tests that call endpoints outside the CRUD helpers. */
     fun client(): RestTestClient = client
 
-    /** Creates a PostgreSQL testcontainer. */
-    // The container is AutoCloseable but deliberately not closed here: callers keep it open for the whole
-    // test run and Testcontainers tears it down on JVM shutdown, so suppress the resource leak inspection.
+    // Creates a PostgreSQL testcontainer. The container is AutoCloseable but deliberately not closed here:
+    // callers keep it open for the whole test run and Testcontainers tears it down on JVM shutdown, so
+    // suppress the resource leak inspection.
     @Suppress("resource")
     fun getPostgresContainer(): PostgreSQLContainer<*> =
         // PostgreSQLContainer is a Java class whose type parameter refers back to itself
@@ -58,20 +59,29 @@ object SystemTestUtils {
         expected: T,
         vararg fieldsToIgnore: String
     ) {
-        assertThat(actual).usingRecursiveComparison().ignoringFields(*fieldsToIgnore).isEqualTo(expected)
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .ignoringFields(*fieldsToIgnore)
+            // a user's role set has no order; the read path yields an EnumSet, the fixtures a LinkedHashSet
+            .ignoringCollectionOrder()
+            .isEqualTo(expected)
     }
 
-    /** Asserts two objects are equal, ignoring the timestamp fields. */
+    // A user's secrets never survive a response round-trip: the raw password is write-only and the stored
+    // hash is never serialized. They are ignored so a created/fetched user compares equal to its fixture.
+    private val secretFields = arrayOf("password", "passwordHash")
+
+    /** Asserts two objects are equal, ignoring the timestamp (and user secret) fields. */
     fun <T> assertEqualsIgnoringTimestamps(
         actual: T,
         expected: T
-    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt")
+    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt", *secretFields)
 
-    /** Asserts two objects are equal, ignoring the id and timestamp fields. */
+    /** Asserts two objects are equal, ignoring the id, timestamp (and user secret) fields. */
     fun <T> assertEqualsIgnoringIdAndTimestamps(
         actual: T,
         expected: T
-    ) = assertEqualsIgnoringFields(actual, expected, "id", "createdAt", "updatedAt")
+    ) = assertEqualsIgnoringFields(actual, expected, "id", "createdAt", "updatedAt", *secretFields)
 
     /** Asserts two lists contain the same elements (any order), ignoring the given fields per element. */
     fun <T> assertEqualsIgnoringFields(
@@ -79,16 +89,23 @@ object SystemTestUtils {
         expected: List<T>,
         vararg fieldsToIgnore: String
     ) {
+        val config =
+            RecursiveComparisonConfiguration
+                .builder()
+                .withIgnoredFields(*fieldsToIgnore)
+                // a user's role set has no order; the read path yields an EnumSet, the fixtures a LinkedHashSet
+                .withIgnoreCollectionOrder(true)
+                .build()
         assertThat(actual)
-            .usingRecursiveFieldByFieldElementComparatorIgnoringFields(*fieldsToIgnore)
+            .usingRecursiveFieldByFieldElementComparator(config)
             .containsExactlyInAnyOrderElementsOf(expected)
     }
 
-    /** Asserts two lists contain the same elements (any order), ignoring the timestamp fields. */
+    /** Asserts two lists contain the same elements (any order), ignoring the timestamp (and user secret) fields. */
     fun <T> assertEqualsIgnoringTimestamps(
         actual: List<T>,
         expected: List<T>
-    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt")
+    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt", *secretFields)
 
     /**
      * Reusable CRUD operations over [RestTestClient] against the server bound by [configureClient].

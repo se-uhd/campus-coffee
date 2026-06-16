@@ -5,15 +5,19 @@ import de.seuhd.campuscoffee.domain.model.enums.CampusType
 import de.seuhd.campuscoffee.domain.model.enums.PosType
 import de.seuhd.campuscoffee.domain.model.objects.Pos
 import de.seuhd.campuscoffee.domain.model.objects.Review
+import de.seuhd.campuscoffee.domain.model.objects.ReviewApproval
+import de.seuhd.campuscoffee.domain.model.objects.Role
 import de.seuhd.campuscoffee.domain.model.objects.User
 import de.seuhd.campuscoffee.domain.ports.api.PosService
 import de.seuhd.campuscoffee.domain.ports.api.ReviewService
 import de.seuhd.campuscoffee.domain.ports.api.UserService
+import de.seuhd.campuscoffee.domain.ports.data.ReviewApprovalDataService
 import java.time.LocalDateTime
 
 /**
  * Test fixtures for domain objects.
  */
+@Suppress("TooManyFunctions")
 object TestFixtures {
     const val MIN_APPROVAL_COUNT = 3
 
@@ -28,7 +32,10 @@ object TestFixtures {
                 loginName = "jane_doe",
                 emailAddress = "jane.doe@uni-heidelberg.de",
                 firstName = "Jane",
-                lastName = "Doe"
+                lastName = "Doe",
+                // cumulative role set: an admin is also a moderator and a user
+                roles = setOf(Role.USER, Role.MODERATOR, Role.ADMIN),
+                password = "aaaMbnPdFYDqkOpS3fVA"
             ),
             User(
                 id = 2L,
@@ -37,7 +44,9 @@ object TestFixtures {
                 loginName = "maxmustermann",
                 emailAddress = "max.mustermann@campus.de",
                 firstName = "Max",
-                lastName = "Mustermann"
+                lastName = "Mustermann",
+                roles = setOf(Role.USER, Role.MODERATOR),
+                password = "AmLtoD3r8lVdnwoLN1Nn"
             ),
             User(
                 id = 3L,
@@ -46,7 +55,20 @@ object TestFixtures {
                 loginName = "student2023",
                 emailAddress = "student2023@study.org",
                 firstName = "Student",
-                lastName = "Example"
+                lastName = "Example",
+                roles = setOf(Role.USER),
+                password = "ZwTwB8Hn8VkNLZec7bR1"
+            ),
+            User(
+                id = 4L,
+                createdAt = DATE_TIME,
+                updatedAt = DATE_TIME,
+                loginName = "lisa_lee",
+                emailAddress = "lisa.lee@uni-heidelberg.de",
+                firstName = "Lisa",
+                lastName = "Lee",
+                roles = setOf(Role.USER),
+                password = "lG6v9dGKZA5kfOHTFLNR"
             )
         )
 
@@ -106,6 +128,9 @@ object TestFixtures {
             )
         )
 
+    // Each review's approvers (APPROVERS_BY_REVIEW_INDEX) are non-authors, and every non-zero count has
+    // matching approver rows. With four users, review 1 reaches the quorum of MIN_APPROVAL_COUNT = 3 and
+    // is seeded as approved; review 3 has no approvals, so the instructor demo can drive it to approval.
     private val REVIEW_LIST =
         listOf(
             Review(
@@ -115,8 +140,8 @@ object TestFixtures {
                 pos = POS_LIST[0],
                 author = USER_LIST[0],
                 review = "Great place!",
-                approved = false,
-                approvalCount = 2
+                approved = true,
+                approvalCount = 3
             ),
             Review(
                 id = 2L,
@@ -125,8 +150,8 @@ object TestFixtures {
                 pos = POS_LIST[0],
                 author = USER_LIST[1],
                 review = "Very nice place!",
-                approved = true,
-                approvalCount = 3
+                approved = false,
+                approvalCount = 2
             ),
             Review(
                 id = 3L,
@@ -140,7 +165,31 @@ object TestFixtures {
             )
         )
 
+    // For each seeded review (by list index), the users (by list index) who approved it. Each approver
+    // differs from the review's author and the list length matches the review's approvalCount, so the
+    // seeded review_approvals rows are consistent with the seeded counts.
+    private val APPROVERS_BY_REVIEW_INDEX =
+        mapOf(
+            // review 1 (author jane_doe): approved by maxmustermann, student2023, and lisa_lee, reaching
+            // the quorum, so it is seeded as approved
+            0 to listOf(1, 2, 3),
+            // review 2 (author maxmustermann): approved by jane_doe and student2023 (below the quorum)
+            1 to listOf(0, 2),
+            // review 3 (author student2023): no approvals yet (the instructor demo drives this one)
+            2 to emptyList()
+        )
+
     fun getUserFixtures(): List<User> = USER_LIST
+
+    /**
+     * The login name and raw password of the seeded user whose highest role is [role]. This is the single
+     * source of the seeded credentials, reused by the dev seeding and the system tests, so a password is
+     * defined in exactly one place.
+     */
+    fun rawCredentialsFor(role: Role): Pair<String, String> =
+        getUserFixtures()
+            .first { user -> user.roles.maxByOrNull { it.ordinal } == role }
+            .let { requireNotNull(it.loginName) to requireNotNull(it.password) }
 
     fun getUserFixturesForInsertion(): List<User> =
         getUserFixtures().map { it.copy(id = null, createdAt = null, updatedAt = null) }
@@ -163,6 +212,30 @@ object TestFixtures {
 
     fun createReviewFixtures(reviewService: ReviewService): List<Review> =
         getReviewFixturesForInsertion().map { reviewService.upsert(it) }
+
+    /**
+     * Seeds the `review_approvals` rows consistent with the seeded reviews: for each review it records
+     * one approval per (non-author) approver listed in [APPROVERS_BY_REVIEW_INDEX], using the ids of the
+     * already-created users and reviews. This keeps every non-zero `approval_count` backed by matching
+     * approver rows. The approve *workflow* that records these at runtime is the subject of the
+     * assignment (Exercise 5); seeding writes them directly.
+     *
+     * @param createdUsers   the persisted users, in fixture order (their ids are read here)
+     * @param createdReviews the persisted reviews, in fixture order (their ids are read here)
+     * @return the recorded approvals
+     */
+    fun createReviewApprovalFixtures(
+        reviewApprovalDataService: ReviewApprovalDataService,
+        createdUsers: List<User>,
+        createdReviews: List<Review>
+    ): List<ReviewApproval> =
+        APPROVERS_BY_REVIEW_INDEX.entries.flatMap { (reviewIndex, approverIndices) ->
+            val reviewId = requireNotNull(createdReviews[reviewIndex].id)
+            approverIndices.map { approverIndex ->
+                val userId = requireNotNull(createdUsers[approverIndex].id)
+                reviewApprovalDataService.record(ReviewApproval(reviewId = reviewId, userId = userId))
+            }
+        }
 
     fun getApprovalConfiguration(): ApprovalConfiguration = ApprovalConfiguration(MIN_APPROVAL_COUNT)
 }

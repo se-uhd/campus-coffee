@@ -16,6 +16,10 @@ dependencies {
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
+    // Spring Security (HTTP Basic + the filter chain) and OAuth2 resource server (JWT bearer tokens).
+    // The starter ships a working-but-permissive setup; the assignment tightens it.
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
 
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.assertj.core)

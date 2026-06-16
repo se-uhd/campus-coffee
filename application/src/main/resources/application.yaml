@@ -32,6 +32,11 @@ osm:
 campus-coffee:
   approval:
     min-count: 3
+jwt:
+  # HMAC (symmetric) signing secret for the stateless JWT bearer tokens. The same value signs and
+  # verifies tokens, so it must stay secret. This is a development default; a real deployment supplies its
+  # own via the JWT_SECRET environment variable. Must be at least 32 bytes for HMAC-SHA256.
+  secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-change-me-in-production}
 
 ---
 spring:

@@ -20,6 +20,8 @@ dependencies {
     implementation(libs.flyway.core)
     runtimeOnly(libs.flyway.database.postgresql)
     implementation(libs.jackson.dataformat.xml)
+    // BCrypt/delegating password encoder for the PasswordHasher adapter (small, dependency-free).
+    implementation(libs.spring.security.crypto)
 
     // MapStruct is compile-only for the Kotlin mappers; kapt runs the processor that generates the impls.
     compileOnly(libs.mapstruct)
