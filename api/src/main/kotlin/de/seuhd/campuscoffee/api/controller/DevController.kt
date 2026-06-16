@@ -40,12 +40,9 @@ class DevController(
     @PutMapping("/data")
     fun load(): ResponseEntity<DevSummaryDto> {
         clearAll()
-        val users = TestFixtures.createUserFixtures(userService)
-        val pos = TestFixtures.createPosFixtures(posService)
-        val reviews = TestFixtures.createReviewFixtures(reviewService)
-        // seed the approver rows so every non-zero approval_count has matching review_approvals
-        TestFixtures.createReviewApprovalFixtures(reviewApprovalDataService, users, reviews)
-        return ResponseEntity.ok(DevSummaryDto(users.size, pos.size, reviews.size))
+        val (users, pos, reviews) =
+            TestFixtures.loadAll(userService, posService, reviewService, reviewApprovalDataService)
+        return ResponseEntity.ok(DevSummaryDto(users, pos, reviews))
     }
 
     @Operation(summary = "Clear all data (users, POS, reviews).")

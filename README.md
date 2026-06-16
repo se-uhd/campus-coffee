@@ -34,7 +34,7 @@ Then, to build the application, run the following command in the command line (o
 ```shell
 gradle build
 ```
-**Note:** The application does not load any data on startup. In the `dev` profile you can seed or reset it on demand — see [Dev endpoints](#dev-endpoints-apidev).
+**Note:** The application does not load any data on startup. In the `dev` profile you can load or reset it on demand — see [Dev endpoints](#dev-endpoints-apidev).
 
 You can use the quiet mode to suppress most log messages:
 
@@ -69,7 +69,7 @@ gradle :application:bootRun --args='--spring.profiles.active=dev'
 ```
 **Note:** The data source is configured via the [`application.yaml`](application/src/main/resources/application.yaml) file.
 
-The application starts with an empty database. Seed it with the fixture dataset so the examples below
+The application starts with an empty database. Load the fixture dataset so the examples below
 have data to work with — see [Dev endpoints](#dev-endpoints-apidev).
 
 ## Explore the REST API
@@ -100,7 +100,7 @@ curl --request PUT http://localhost:8080/api/dev/data
 curl --request DELETE http://localhost:8080/api/dev/data
 ```
 
-The fixture dataset seeds four users with known passwords and cumulative role sets (an admin is also a
+The fixture dataset includes four users with known passwords and cumulative role sets (an admin is also a
 moderator and a user). Passwords are stored only as hashes and are never returned in any response.
 
 | Login name      | Password               | Roles                        |
@@ -110,8 +110,8 @@ moderator and a user). Passwords are stored only as hashes and are never returne
 | `student2023`   | `ZwTwB8Hn8VkNLZec7bR1` | `USER`                       |
 | `lisa_lee`      | `lG6v9dGKZA5kfOHTFLNR` | `USER`                       |
 
-The seed also records `review_approvals` rows consistent with each review's approval count, so no
-seeded review has a non-zero count without matching approver rows. Security is currently permissive
+The fixture data also records `review_approvals` rows consistent with each review's approval count, so no
+review has a non-zero count without matching approver rows. Security is currently permissive
 (every endpoint is open); enforcing authentication and authorization is the subject of the assignment.
 
 #### POS endpoints (/api/pos)
@@ -173,7 +173,7 @@ curl --request DELETE -i http://localhost:8080/api/pos/1 # set existing POS ID h
 ```
 
 **Note:** A POS that still has reviews cannot be deleted; the API answers `409 Conflict`. With the
-seeded fixture data, POS 1 has reviews. Delete its reviews first or pick a POS without reviews (e.g., 3).
+fixture data, POS 1 has reviews. Delete its reviews first or pick a POS without reviews (e.g., 3).
 
 #### Users endpoints (/api/users)
 
@@ -220,7 +220,7 @@ curl --request DELETE -i http://localhost:8080/api/users/1 # set existing user I
 ```
 
 **Note:** A user who still has reviews cannot be deleted; the API answers `409 Conflict`. With the
-seeded fixture data, users 1-3 have authored reviews. Delete their reviews first or create a fresh user.
+fixture data, users 1-3 have authored reviews. Delete their reviews first or create a fresh user.
 
 #### Reviews endpoint (/api/reviews)
 
@@ -304,7 +304,7 @@ Explanation of selected options:
 `docker run ... -it`  runs a container in interactive mode with a pseudo-TTY (terminal).
 `docker run ... --rm` automatically removes the container (and its associated resources) if it exists already.
 
-Both run methods start the app in the `dev` profile. Since the application does not load data on startup, the API comes up empty — seed it with `PUT /api/dev/data` (see [Dev endpoints](#dev-endpoints-apidev)).
+Both run methods start the app in the `dev` profile. Since the application does not load data on startup, the API comes up empty — load it with `PUT /api/dev/data` (see [Dev endpoints](#dev-endpoints-apidev)).
 
 #### Use Docker compose to run the app container together with the DB container
 
@@ -332,7 +332,7 @@ Stop and remove containers and networks:
 docker compose down
 ```
 
-The `db` service has no named volume, so `docker compose down` discards its data and the next `docker compose up` starts with an empty database — reseed it with `PUT /api/dev/data`.
+The `db` service has no named volume, so `docker compose down` discards its data and the next `docker compose up` starts with an empty database — reload it with `PUT /api/dev/data`.
 
 ## Deployment
 

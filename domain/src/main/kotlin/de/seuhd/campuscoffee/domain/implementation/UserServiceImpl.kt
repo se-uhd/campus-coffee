@@ -22,7 +22,7 @@ class UserServiceImpl(
     /**
      * Normalizes the password before delegating to the generic upsert. A freshly supplied raw password is
      * hashed and the raw value dropped, so the plaintext is never persisted or read back. An update that
-     * omits the password keeps the user's existing stored hash -- the write-only password is never sent
+     * omits the password keeps the user's existing stored hash. The write-only password is never sent
      * back to be re-submitted, so an omitted one means "unchanged", not "clear it".
      */
     override fun upsert(domainObject: User): User {

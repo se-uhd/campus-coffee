@@ -4,6 +4,7 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 plugins {
     id("de.seuhd.campuscoffee.java-conventions")
     id("de.seuhd.campuscoffee.kotlin-conventions")
+    id("de.seuhd.campuscoffee.kotlin-kapt-conventions")
     id("de.seuhd.campuscoffee.jacoco-conventions")
     id("de.seuhd.campuscoffee.pitest-conventions")
     alias(libs.plugins.spring.boot)
@@ -20,6 +21,8 @@ dependencies {
     // The starter ships a working-but-permissive setup; the assignment tightens it.
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.resource.server)
+    // generate spring-configuration-metadata.json for JwtProperties so the IDE resolves the jwt.* keys
+    kapt(libs.spring.boot.configuration.processor)
 
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.assertj.core)
@@ -47,6 +50,12 @@ springBoot {
 // Only the executable bootJar is consumed; drop the redundant plain library jar.
 tasks.named("jar") {
     enabled = false
+}
+
+// The test suite signs and verifies JWTs with its own throwaway secret, independent of the application's
+// dev default in application.yaml (and of any secret a real deployment supplies).
+tasks.test {
+    systemProperty("jwt.secret", "test-only-hs256-secret-not-used-outside-the-test-suite")
 }
 
 // Cross-module mutation: mutate the api and data classes against this module's system and

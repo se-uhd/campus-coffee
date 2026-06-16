@@ -1,0 +1,48 @@
+name: campus-coffee-prod
+
+# Runs the application in the prod profile: authentication is enforced, Swagger and the /api/dev
+# endpoints are off, and the JWT secret comes from the environment (no insecure fallback). The prod
+# profile loads the fixture data on startup, so the demo has content without the /api/dev endpoints.
+#
+# Local: export JWT_SECRET=$(openssl rand -base64 32) && docker compose -f compose.prod.yaml up
+# Cloud Run: see INSTRUCTOR.md, step 7.
+
+services:
+  app:
+    build:
+      context: .
+    container_name: campus-coffee-app-prod
+    networks:
+      - campus-coffee-net
+    ports:
+      - '8080:8080'
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      # the prod profile has no fallback, so the deployer must supply JWT_SECRET
+      - JWT_SECRET=${JWT_SECRET}
+
+  db:
+    image: 'postgres:17-alpine'
+    container_name: db-prod
+    networks:
+      - campus-coffee-net
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+networks:
+  campus-coffee-net:

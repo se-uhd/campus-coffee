@@ -130,7 +130,7 @@ object TestFixtures {
 
     // Each review's approvers (APPROVERS_BY_REVIEW_INDEX) are non-authors, and every non-zero count has
     // matching approver rows. With four users, review 1 reaches the quorum of MIN_APPROVAL_COUNT = 3 and
-    // is seeded as approved; review 3 has no approvals, so the instructor demo can drive it to approval.
+    // is approved; review 3 has no approvals, so the instructor demo can drive it to approval.
     private val REVIEW_LIST =
         listOf(
             Review(
@@ -158,20 +158,20 @@ object TestFixtures {
                 createdAt = DATE_TIME,
                 updatedAt = DATE_TIME,
                 pos = POS_LIST.last(),
-                author = USER_LIST.last(),
+                author = USER_LIST[2],
                 review = "This place is really bad!",
                 approved = false,
                 approvalCount = 0
             )
         )
 
-    // For each seeded review (by list index), the users (by list index) who approved it. Each approver
+    // For each review (by list index), the users (by list index) who approved it. Each approver
     // differs from the review's author and the list length matches the review's approvalCount, so the
-    // seeded review_approvals rows are consistent with the seeded counts.
+    // review_approvals rows are consistent with the counts.
     private val APPROVERS_BY_REVIEW_INDEX =
         mapOf(
             // review 1 (author jane_doe): approved by maxmustermann, student2023, and lisa_lee, reaching
-            // the quorum, so it is seeded as approved
+            // the quorum, so it is approved
             0 to listOf(1, 2, 3),
             // review 2 (author maxmustermann): approved by jane_doe and student2023 (below the quorum)
             1 to listOf(0, 2),
@@ -182,9 +182,9 @@ object TestFixtures {
     fun getUserFixtures(): List<User> = USER_LIST
 
     /**
-     * The login name and raw password of the seeded user whose highest role is [role]. This is the single
-     * source of the seeded credentials, reused by the dev seeding and the system tests, so a password is
-     * defined in exactly one place.
+     * The login name and raw password of the fixture user whose highest role is [role]. This is the single
+     * source of the fixture credentials, reused by the dev endpoint, the startup loader, and the system
+     * tests, so a password is defined in exactly one place.
      */
     fun rawCredentialsFor(role: Role): Pair<String, String> =
         getUserFixtures()
@@ -214,11 +214,11 @@ object TestFixtures {
         getReviewFixturesForInsertion().map { reviewService.upsert(it) }
 
     /**
-     * Seeds the `review_approvals` rows consistent with the seeded reviews: for each review it records
-     * one approval per (non-author) approver listed in [APPROVERS_BY_REVIEW_INDEX], using the ids of the
+     * Records the `review_approvals` rows for the fixture reviews: for each review it records one approval
+     * per (non-author) approver listed in [APPROVERS_BY_REVIEW_INDEX], using the ids of the
      * already-created users and reviews. This keeps every non-zero `approval_count` backed by matching
      * approver rows. The approve *workflow* that records these at runtime is the subject of the
-     * assignment (Exercise 5); seeding writes them directly.
+     * assignment (Exercise 5); the fixtures write them directly.
      *
      * @param createdUsers   the persisted users, in fixture order (their ids are read here)
      * @param createdReviews the persisted reviews, in fixture order (their ids are read here)
@@ -236,6 +236,23 @@ object TestFixtures {
                 reviewApprovalDataService.record(ReviewApproval(reviewId = reviewId, userId = userId))
             }
         }
+
+    /**
+     * Loads the users, POS, reviews, and their approver rows into the given services and returns the
+     * counts (users, POS, reviews). Used by the dev endpoint and the optional startup loader.
+     */
+    fun loadAll(
+        userService: UserService,
+        posService: PosService,
+        reviewService: ReviewService,
+        reviewApprovalDataService: ReviewApprovalDataService
+    ): Triple<Int, Int, Int> {
+        val users = createUserFixtures(userService)
+        val pos = createPosFixtures(posService)
+        val reviews = createReviewFixtures(reviewService)
+        createReviewApprovalFixtures(reviewApprovalDataService, users, reviews)
+        return Triple(users.size, pos.size, reviews.size)
+    }
 
     fun getApprovalConfiguration(): ApprovalConfiguration = ApprovalConfiguration(MIN_APPROVAL_COUNT)
 }
