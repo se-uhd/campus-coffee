@@ -16,8 +16,9 @@ val libs = the<VersionCatalogsExtension>().named("libs")
 val javaVersion = libs.findVersion("java").get().requiredVersion
 
 group = "de.seuhd.campuscoffee"
-// 0.1.x line for the Gradle/Kotlin migration, distinct from the 0.0.x Maven/Java line on main.
-version = "0.1.0"
+// 0.2.0 adds authentication/authorization on top of the 0.1.0 Gradle/Kotlin migration line
+// (the 0.0.x line was the original Maven/Java codebase).
+version = "0.2.0"
 
 // Align the Kotlin stdlib/reflect with the Kotlin plugin version (Boot 4 manages an older stdlib;
 // the plugin needs >= 2.3 for jvmTarget 25).

@@ -32,6 +32,16 @@ osm:
 campus-coffee:
   approval:
     min-count: 3
+  fixtures:
+    # Load the fixture data once on startup, but only when the database has no users yet. Off by
+    # default; the prod deployment turns it on, because that profile has no /api/dev endpoints to load
+    # data through.
+    load-on-startup: false
+jwt:
+  # HMAC (symmetric) signing secret for the stateless JWT bearer tokens. The same value signs and
+  # verifies tokens, so it must stay secret. This is a development default; a real deployment supplies its
+  # own via the JWT_SECRET environment variable. Must be at least 32 bytes for HMAC-SHA256.
+  secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-change-me-in-production}
 
 ---
 spring:
@@ -61,3 +71,19 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /api/swagger-ui.html
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+jwt:
+  # No fallback in prod: JWT_SECRET must be set in the environment, or startup fails. The datasource
+  # (SPRING_DATASOURCE_*) and the other settings also come from the environment that the deployment
+  # provides; Swagger and the dev endpoints are off, because this is not the dev profile.
+  secret: ${JWT_SECRET}
+campus-coffee:
+  fixtures:
+    # This is a teaching deployment, so it loads the fixture data on startup. Set
+    # LOAD_FIXTURES_ON_STARTUP=false for an empty database.
+    load-on-startup: ${LOAD_FIXTURES_ON_STARTUP:true}

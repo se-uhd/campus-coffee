@@ -12,12 +12,14 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.ServletWebRequest
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.time.LocalDateTime
 
 /**
@@ -57,6 +59,22 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
             .body(errorBody(exception, config.httpStatus, request, exception.message))
     }
 
+    /**
+     * Maps an authentication failure raised inside a controller to 401. The token endpoint authenticates
+     * the supplied credentials, and a wrong password raises an [AuthenticationException] there (not in the
+     * filter chain), so the security entry point does not see it.
+     */
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(
+        exception: AuthenticationException,
+        request: WebRequest
+    ): ResponseEntity<ErrorResponse> {
+        log.warn("Authentication failed: {}", exception.message)
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(errorBody(exception, HttpStatus.UNAUTHORIZED, request, exception.message))
+    }
+
     /** Fallback handler for unexpected exceptions, returning HTTP 500. */
     @ExceptionHandler(Exception::class)
     fun handleGenericException(
@@ -86,6 +104,24 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         return ResponseEntity.status(status).headers(headers).body(body)
     }
 
+    /**
+     * Renders the 404 for an unmapped path as a clean [ErrorResponse]. Spring raises
+     * [NoResourceFoundException] when no handler (or static resource) matches the request; the base class
+     * would surface its framework wording ("No static resource ...") and class name, so this overrides it
+     * with a neutral `NotFound` code and an endpoint-oriented message.
+     */
+    override fun handleNoResourceFoundException(
+        ex: NoResourceFoundException,
+        headers: HttpHeaders,
+        status: HttpStatusCode,
+        request: WebRequest
+    ): ResponseEntity<Any>? {
+        val path = extractPath(request)
+        log.warn("No endpoint mapped for {}", path)
+        val body: Any = errorBody(ex, status, request, "No endpoint found for '$path'.", errorCode = "NotFound")
+        return ResponseEntity.status(status).headers(headers).body(body)
+    }
+
     /** Renders every exception handled by [ResponseEntityExceptionHandler] as a standard [ErrorResponse]. */
     override fun handleExceptionInternal(
         ex: Exception,
@@ -103,10 +139,11 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         exception: Exception,
         status: HttpStatusCode,
         request: WebRequest,
-        message: String?
+        message: String?,
+        errorCode: String = exception.javaClass.simpleName
     ): ErrorResponse =
         ErrorResponse(
-            errorCode = exception.javaClass.simpleName,
+            errorCode = errorCode,
             message = message,
             statusCode = status.value(),
             statusMessage = HttpStatus.valueOf(status.value()).reasonPhrase,

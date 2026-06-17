@@ -2,6 +2,7 @@ package de.seuhd.campuscoffee.data.integration
 
 import de.seuhd.campuscoffee.data.DataTestApplication
 import de.seuhd.campuscoffee.data.persistence.repositories.PosRepository
+import de.seuhd.campuscoffee.data.persistence.repositories.ReviewApprovalRepository
 import de.seuhd.campuscoffee.data.persistence.repositories.ReviewRepository
 import de.seuhd.campuscoffee.data.persistence.repositories.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -27,9 +28,14 @@ abstract class AbstractDataIntegrationTest {
     @Autowired
     protected lateinit var reviewRepository: ReviewRepository
 
+    @Autowired
+    protected lateinit var reviewApprovalRepository: ReviewApprovalRepository
+
     @BeforeEach
     fun clearDatabase() {
-        // reviews reference POS and users via foreign keys, so they must be cleared first
+        // approvals reference reviews and users, and reviews reference POS and users, so they cascade
+        // down to the base tables in this order
+        reviewApprovalRepository.deleteAllInBatch()
         reviewRepository.deleteAllInBatch()
         posRepository.deleteAllInBatch()
         userRepository.deleteAllInBatch()

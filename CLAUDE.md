@@ -157,10 +157,11 @@ Build image:
 docker build -t campus-coffee:latest .
 ```
 
-Run with Docker Compose:
+Run with Docker Compose (the Compose file defaults `DB_HOST` to `localhost` for Cloud Run, so set
+`DB_HOST=db` locally):
 
 ```shell
-docker compose down && docker compose up
+docker compose down && DB_HOST=db docker compose up
 ```
 
 ### Dependency Updates

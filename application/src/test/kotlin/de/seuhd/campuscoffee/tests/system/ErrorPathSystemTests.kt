@@ -171,8 +171,9 @@ class ErrorPathSystemTests : AbstractSystemTest() {
     }
 
     @Test
-    fun `requesting an unmapped path returns 404 Not Found`() {
-        // no controller maps this path, so it falls through to a NoResourceFoundException -> 404
+    fun `requesting an unmapped path returns 404 Not Found with a clean error body`() {
+        // no controller maps this path, so it falls through to a NoResourceFoundException -> 404; the
+        // handler renders it without leaking the framework wording ("No static resource ...") or class name
         val result =
             client()
                 .get()
@@ -181,6 +182,12 @@ class ErrorPathSystemTests : AbstractSystemTest() {
                 .returnResult<String>()
 
         assertThat(result.status.value()).isEqualTo(HttpStatus.NOT_FOUND.value())
+        val body = result.responseBody ?: ""
+        assertThat(body).contains("NotFound")
+        assertThat(body).contains("No endpoint found for")
+        assertThat(body).contains("/api/this-endpoint-does-not-exist")
+        assertThat(body).doesNotContain("static resource")
+        assertThat(body).doesNotContain("NoResourceFoundException")
     }
 
     @Test

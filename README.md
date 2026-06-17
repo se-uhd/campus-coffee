@@ -16,7 +16,7 @@ demo (see [Deployment](#deployment)), restrict access — e.g., deploy to Cloud 
 
 The approval workflow inherits this gap: approvals are anonymous counts, so the same user can approve
 a review repeatedly (see [Approve reviews](#approve-reviews)). The rework, tracking approvers per user, only becomes meaningful once identity is trustworthy. It is
-therefore deferred to the same iteration and marked as `TODO(auth)` in `ReviewServiceImpl`.
+therefore deferred to the same iteration and marked as `TODO (Exercise 5)` in `ReviewServiceImpl`.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ Then, to build the application, run the following command in the command line (o
 ```shell
 gradle build
 ```
-**Note:** The application does not load any data on startup. In the `dev` profile you can seed or reset it on demand — see [Dev endpoints](#dev-endpoints-apidev).
+**Note:** The application does not load any data on startup. In the `dev` profile you can load or reset it on demand — see [Dev endpoints](#dev-endpoints-apidev).
 
 You can use the quiet mode to suppress most log messages:
 
@@ -69,7 +69,7 @@ gradle :application:bootRun --args='--spring.profiles.active=dev'
 ```
 **Note:** The data source is configured via the [`application.yaml`](application/src/main/resources/application.yaml) file.
 
-The application starts with an empty database. Seed it with the fixture dataset so the examples below
+The application starts with an empty database. Load the fixture dataset so the examples below
 have data to work with — see [Dev endpoints](#dev-endpoints-apidev).
 
 ## Explore the REST API
@@ -99,6 +99,20 @@ curl --request PUT http://localhost:8080/api/dev/data
 # clear all data
 curl --request DELETE http://localhost:8080/api/dev/data
 ```
+
+The fixture dataset includes four users with known passwords and cumulative role sets (an admin is also a
+moderator and a user). Passwords are stored only as hashes and are never returned in any response.
+
+| Login name      | Password               | Roles                        |
+| --------------- | ---------------------- | ---------------------------- |
+| `jane_doe`      | `aaaMbnPdFYDqkOpS3fVA` | `USER`, `MODERATOR`, `ADMIN` |
+| `maxmustermann` | `AmLtoD3r8lVdnwoLN1Nn` | `USER`, `MODERATOR`          |
+| `student2023`   | `ZwTwB8Hn8VkNLZec7bR1` | `USER`                       |
+| `lisa_lee`      | `lG6v9dGKZA5kfOHTFLNR` | `USER`                       |
+
+The fixture data also records `review_approvals` rows consistent with each review's approval count, so no
+review has a non-zero count without matching approver rows. Security is currently permissive
+(every endpoint is open); enforcing authentication and authorization is the subject of the assignment.
 
 #### POS endpoints (/api/pos)
 
@@ -159,7 +173,7 @@ curl --request DELETE -i http://localhost:8080/api/pos/1 # set existing POS ID h
 ```
 
 **Note:** A POS that still has reviews cannot be deleted; the API answers `409 Conflict`. With the
-seeded fixture data, POS 1 has reviews. Delete its reviews first or pick a POS without reviews (e.g., 3).
+fixture data, POS 1 has reviews. Delete its reviews first or pick a POS without reviews (e.g., 3).
 
 #### Users endpoints (/api/users)
 
@@ -206,7 +220,7 @@ curl --request DELETE -i http://localhost:8080/api/users/1 # set existing user I
 ```
 
 **Note:** A user who still has reviews cannot be deleted; the API answers `409 Conflict`. With the
-seeded fixture data, users 1-3 have authored reviews. Delete their reviews first or create a fresh user.
+fixture data, users 1-3 have authored reviews. Delete their reviews first or create a fresh user.
 
 #### Reviews endpoint (/api/reviews)
 
@@ -248,7 +262,7 @@ curl --request PUT 'http://localhost:8080/api/reviews/4/approve?user_id=1' # use
 However, users can approve the same review multiple times. This is a known limitation of the current
 implementation: The system only counts approvals and never records *who* approved, and without
 authentication the approver id is client-asserted anyway. The fix — recording approvers in a
-`review_approvals` table with a unique `(review_id, user_id)` constraint — is tracked as `TODO(auth)`
+`review_approvals` table with a unique `(review_id, user_id)` constraint — is tracked as `TODO (Exercise 5)`
 in `ReviewServiceImpl` and lands together with authentication/authorization (see
 [Scope](#scope-no-authentication-yet)):
 ```shell
@@ -290,7 +304,7 @@ Explanation of selected options:
 `docker run ... -it`  runs a container in interactive mode with a pseudo-TTY (terminal).
 `docker run ... --rm` automatically removes the container (and its associated resources) if it exists already.
 
-Both run methods start the app in the `dev` profile. Since the application does not load data on startup, the API comes up empty — seed it with `PUT /api/dev/data` (see [Dev endpoints](#dev-endpoints-apidev)).
+Both run methods start the app in the `dev` profile. Since the application does not load data on startup, the API comes up empty — load it with `PUT /api/dev/data` (see [Dev endpoints](#dev-endpoints-apidev)).
 
 #### Use Docker compose to run the app container together with the DB container
 
@@ -306,10 +320,11 @@ Delete existing DB container (if you manually created it before):
 docker rm -f db 2>/dev/null || true
 ```
 
-Create and start containers:
+Create and start containers (the Compose file defaults `DB_HOST` to `localhost` for Cloud Run, so set
+`DB_HOST=db` locally to reach the database container by its Compose service name):
 
 ```shell
-docker compose down && docker compose up
+docker compose down && DB_HOST=db docker compose up
 ```
 
 Stop and remove containers and networks:
@@ -318,58 +333,57 @@ Stop and remove containers and networks:
 docker compose down
 ```
 
-The `db` service has no named volume, so `docker compose down` discards its data and the next `docker compose up` starts with an empty database — reseed it with `PUT /api/dev/data`.
+The `db` service has no named volume, so `docker compose down` discards its data and the next `DB_HOST=db docker compose up` starts with an empty database — reload it with `PUT /api/dev/data`.
 
 ## Deployment
 
-### Deploy CampusCoffee to Google Cloud
+### Deploy CampusCoffee to Google Cloud Run
 
-We use the `gcloud` CLI (see [`mise.toml`](mise.toml)) to build CampusCoffee in the cloud using Cloud Build
-and deploy it to Cloud Run.
-Deployment using `compose.yaml` is [still in preview](https://docs.cloud.google.com/run/docs/deploy-run-compose); install the `beta` component first (`gcloud` prompts to install any other required components on first run).
+We use the `gcloud` CLI (see [`mise.toml`](mise.toml)) to build CampusCoffee from source with Cloud Build
+and deploy it to Cloud Run, using [`compose.yaml`](compose.yaml) (the `dev` profile).
 
-Install the required `gcloud` CLI component:
+> **Keep this deployment private.** The `dev` profile exposes Swagger and the unauthenticated `/api/dev`
+> data endpoints, and — until you finish the assignment — write requests need no credentials. Do not expose it on
+> the public internet: leave the service **IAM-gated** (the default below), or treat it as throwaway. Once
+> your solution enforces authentication, the prod profile ([`compose.prod.yaml`](compose.prod.yaml)) is
+> the one designed for a public URL.
+
+Deploying from Compose is [still in preview](https://docs.cloud.google.com/run/docs/deploy-run-compose),
+so install the `beta` component first (`gcloud` prompts to install any other required components on first
+run). You also need a Google Cloud project with billing enabled.
 
 ```shell
 gcloud components install beta
+gcloud auth login
+gcloud config set project <your-project-id>
+gcloud config set run/region <region>   # e.g. europe-west3; otherwise compose up prompts for one
 ```
 
-Log in and deploy the application using the `compose.yaml` file:
+Build and deploy from source. This creates **one** Cloud Run service (named after the Compose project,
+`campus-coffee`) that runs the app and PostgreSQL as **sidecar containers** sharing one network namespace —
+which is why `compose.yaml` reaches the database at `localhost`, not the Compose service name `db`
+(`DB_HOST` defaults to `localhost`; see the file's comments):
 
 ```shell
-gcloud auth login
 gcloud beta run compose up compose.yaml
 ```
 
-Example output:
-````
-$ gcloud beta run compose up compose.yaml
-Deploying from Compose to Cloud Run...
-Please specify a region:
-[1] africa-south1
-[2] asia-east1
-[3] asia-east2
-...
-[18] europe-west1
-...
-[44] cancel
-Please enter numeric choice or text value (must exactly match list item):  18
+`compose up` deploys the service IAM-gated (not publicly invocable), which is what we want here. Read its
+URL and reach it with your own identity token:
 
-To make this the default region, run `gcloud config set run/region europe-west1`.
+```shell
+URL=$(gcloud run services describe campus-coffee --format='value(status.url)')
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" "$URL/api/pos"
+```
 
-Region set to europe-west1. You can change the region with gcloud config set run/region europe-west1.
+This is a throwaway demo. Running PostgreSQL as a sidecar container next to the app is fine for a demo but
+not how you would run it in production: Cloud Run treats the container as ephemeral, so a cold start
+brings up an empty database. A real cloud deployment points the app at a **managed (hosted) database** —
+e.g., Cloud SQL — instead of a self-managed Postgres container. Delete the deployment when you are done:
 
-✓ Setting up resources...
-✓ Building container app from source... Logs are available at [https://console.cloud.google.com/cloud-build/builds;region=europe-west1
-/c6871612-0596-4868-bd58-c9eaa1cb6bc4?project=797467293729].
-Resource setup complete.
-Deploying service 'campus-coffee' in project 'sotorrent-org' in region 'europe-west1'.
-✓ Updating service 'campus-coffee'... Done.
-✓ Creating Revision...
-✓ Routing traffic...
-Service 'campus-coffee' has been deployed.
-Service URL: https://campus-coffee-4dx5ftg7eq-ew.a.run.app
-````
+```shell
+gcloud run services delete campus-coffee
+```
 
 ## Code coverage and mutation testing
 

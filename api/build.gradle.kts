@@ -15,6 +15,12 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(libs.spring.boot.starter.validation)
+    // Spring Security types used in the api layer: reading the authenticated principal
+    // (CurrentUserProvider) and minting the JWT in the auth controller (the OAuth2 JWT encoder/claims).
+    // ArchUnit gates layers, not libraries, so a Spring Security dependency here is allowed; the domain
+    // stays free of it.
+    implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.oauth2.resource.server)
     // Jackson support for the Kotlin DTOs (construction, nullability, defaults); Spring Boot auto-registers it.
     implementation(libs.jackson.module.kotlin)
 
