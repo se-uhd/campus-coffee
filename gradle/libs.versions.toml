@@ -29,7 +29,7 @@ pitest-plugin = "1.19.0"
 ktlint-plugin = "12.1.2"
 ktlint-tool = "1.5.0"
 # detekt static analysis: the 2.0 alpha is pinned to match the Kotlin version, and gated via `check`.
-detekt = "2.0.0-alpha.4"
+detekt = "2.0.0-alpha.5"
 
 [libraries]
 # BOM-managed (version omitted on purpose)
