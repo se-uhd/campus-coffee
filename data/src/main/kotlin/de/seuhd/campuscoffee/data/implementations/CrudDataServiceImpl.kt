@@ -7,6 +7,7 @@ import de.seuhd.campuscoffee.domain.exceptions.ConcurrentUpdateException
 import de.seuhd.campuscoffee.domain.exceptions.DeletionConflictException
 import de.seuhd.campuscoffee.domain.exceptions.DuplicationException
 import de.seuhd.campuscoffee.domain.exceptions.NotFoundException
+import de.seuhd.campuscoffee.domain.exceptions.ValidationException
 import de.seuhd.campuscoffee.domain.model.objects.DomainModel
 import de.seuhd.campuscoffee.domain.ports.IdGenerator
 import de.seuhd.campuscoffee.domain.ports.data.CrudDataService
@@ -124,6 +125,20 @@ abstract class CrudDataServiceImpl<DOMAIN : DomainModel<ID>, ENTITY : Entity, RE
             throw DeletionConflictException(domainClass, id, e)
         }
     }
+
+    /**
+     * Rejects a revert: reverting a change requires the event log, which the relational adapter does not
+     * keep. The event-sourcing decorator overrides this to append a compensating event instead.
+     *
+     * @throws ValidationException always, since the relational adapter has no event log to compensate against
+     */
+    override fun revertLastChange(
+        id: ID,
+        version: Long
+    ): DOMAIN =
+        throw ValidationException(
+            "Reverting ${domainClass.simpleName} with ID $id is only available in event-sourcing mode."
+        )
 
     /**
      * Queries by a unique field following the common pattern: query -> map -> orElseThrow. Reduces

@@ -1,5 +1,6 @@
 package de.seuhd.campuscoffee.domain.ports.api
 
+import de.seuhd.campuscoffee.domain.exceptions.ConcurrentUpdateException
 import de.seuhd.campuscoffee.domain.exceptions.DeletionConflictException
 import de.seuhd.campuscoffee.domain.exceptions.DuplicationException
 import de.seuhd.campuscoffee.domain.exceptions.NotFoundException
@@ -54,4 +55,21 @@ interface CrudService<DOMAIN : DomainModel<ID>, ID> {
      * @throws DeletionConflictException if other data still references the object
      */
     fun delete(id: ID)
+
+    /**
+     * Reverts an object's last recorded change by appending a compensating event, guarded against
+     * concurrent modifications: the revert proceeds only if the object's current version still equals
+     * [version]. Available only in event-sourcing mode.
+     *
+     * @param id the unique identifier of the object whose last change is reverted
+     * @param version the version the caller observed; the guard rejects the revert if the object moved past it
+     * @return the object restored to its previous state, or null if the compensation removed it (the
+     *   last change was its creation)
+     * @throws NotFoundException if no object exists with the given ID
+     * @throws ConcurrentUpdateException if the object was modified since [version] (reload and retry)
+     */
+    fun revertLastChange(
+        id: ID,
+        version: Long
+    ): DOMAIN?
 }

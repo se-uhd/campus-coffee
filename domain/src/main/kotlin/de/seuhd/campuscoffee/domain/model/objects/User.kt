@@ -10,11 +10,15 @@ import java.util.UUID
  * only ever set on the way *in* (create/update); the domain hashes it via the `PasswordHasher` port and
  * never reads it back. [passwordHash] is the stored hash, populated when a user is *read* and never
  * serialized to a client. [roles] is the user's set of authorization roles.
+ *
+ * [version] is the optimistic-locking version, populated on read; a client echoes it to guard a revert
+ * against concurrent changes.
  */
 data class User(
     override val id: UUID? = null,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
+    val version: Long? = null,
     val loginName: String,
     val emailAddress: String,
     val firstName: String,

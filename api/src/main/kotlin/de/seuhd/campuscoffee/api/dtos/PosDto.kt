@@ -18,6 +18,7 @@ data class PosDto(
     override val id: UUID? = null,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
+    val version: Long? = null,
     @field:NotBlank(message = "Name cannot be empty.")
     @field:Size(max = 255, message = "Name must be at most 255 characters long.")
     val name: String?,

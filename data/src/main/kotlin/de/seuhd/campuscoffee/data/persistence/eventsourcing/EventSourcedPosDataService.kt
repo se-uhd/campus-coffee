@@ -30,7 +30,8 @@ import java.util.UUID
 )
 class EventSourcedPosDataService(
     @param:Qualifier(PosDataServiceImpl.BEAN_NAME) private val delegate: PosDataService,
-    private val writer: EventSourcedWriter
+    private val writer: EventSourcedWriter,
+    private val reverter: EventSourcedReverter
 ) : PosDataService by delegate {
     @Transactional
     override fun upsert(domain: Pos): Pos =
@@ -46,4 +47,10 @@ class EventSourcedPosDataService(
 
     @Transactional
     override fun clear() = writer.clear(Pos::class, delegate::clear)
+
+    @Transactional
+    override fun revertLastChange(
+        id: UUID,
+        version: Long
+    ): Pos? = reverter.revertLastChange(Pos::class, id, version, delegate::getById, { it.version })
 }

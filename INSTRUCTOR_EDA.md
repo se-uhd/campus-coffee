@@ -166,7 +166,54 @@ curl -i --request POST -u maxmustermann:AmLtoD3r8lVdnwoLN1Nn --header "Content-T
 
 Re-run the events query and the count is unchanged. The rejected request appended nothing.
 
-## 5. Relational mode for comparison
+## 5. Reverting a change with a compensating event
+
+An append-only log never deletes an event, so "undo" is a new event whose projection reverts the last
+change, a *compensating event*. `EventSourcedReverter` reads the entity's history (ordered by `seq`),
+decides the compensation from its last recorded change, appends it, and projects it, in one transaction:
+
+- the last change was a **creation** (`INSERT`) → append a `DELETE`: the row is removed (`204 No Content`).
+- the last change was an **update** (`UPDATE`) → append an `UPDATE` carrying the immediately preceding
+  snapshot: the row is restored (`200 OK`).
+
+Reverting is a read-modify-write, so it is optimistically guarded: the caller passes the `version` it
+observed and the revert proceeds only if the row's current version still matches, else `409 Conflict`. The
+version is the `@Version` counter, exposed as a read-only `version` field on each resource.
+
+Continuing with the `Event Cafe` POS, read its current version, edit it, then revert the edit:
+
+```shell
+# read the current version (0 for a freshly created POS)
+curl -s http://localhost:8080/api/pos | python3 -c 'import sys,json; p=[p for p in json.load(sys.stdin) if p["name"]=="Event Cafe"][0]; print("id", p["id"], "version", p["version"])'
+```
+
+A `PUT` advances the version to 1; then revert that edit by passing the version you now hold:
+
+```shell
+ID=<the id printed above>
+curl -i --request PUT -u maxmustermann:AmLtoD3r8lVdnwoLN1Nn --header "Content-Type: application/json" \
+  --data '{"id":"'"$ID"'","name":"Event Cafe","description":"Edited","type":"CAFE","campus":"ALTSTADT","street":"Hauptstrasse","houseNumber":"5","postalCode":"69117","city":"Heidelberg"}' \
+  http://localhost:8080/api/pos/$ID
+curl -i --request POST -u maxmustermann:AmLtoD3r8lVdnwoLN1Nn "http://localhost:8080/api/pos/$ID/revert?version=1"
+# -> 200, the description is back to "Demo"; a compensating UPDATE event was appended
+```
+
+The edit and the revert are both in the log, in order. The revert did not erase the edit, only compensated
+for it:
+
+```shell
+docker exec -it db psql -U postgres -c \
+  "SELECT seq, change_type, body->>'description' AS description
+   FROM events WHERE entity_type='Pos' AND body->>'id'='$ID' ORDER BY seq;"
+# -> INSERT (Demo), UPDATE (Edited), UPDATE (Demo): three events, the log intact
+```
+
+Because the revert is itself an event, reverting again re-applies the edit. Reverting a *creation* removes
+the row (`204`); if other data references it (a POS with reviews), the compensating `DELETE` conflicts and
+the revert answers `409`, exactly as a direct delete would. In relational mode there is no log to compensate
+against, so the endpoint answers `400`.
+
+## 6. Relational mode for comparison
 
 Restart in relational mode. The same API does the same thing, but write requests go straight to the tables and
 nothing is logged:
@@ -182,7 +229,7 @@ docker exec -it db psql -U postgres -c "SELECT count(*) FROM events;"   # -> 0 i
 The `events` table still exists (`V8` always runs), but nothing writes to it, and the read tables are the
 only copy of the data.
 
-## 6. Migrating an existing relational database into the log
+## 7. Migrating an existing relational database into the log
 
 Two one-shot startup flags move an existing database between the two representations (both act only in
 event-sourcing mode):
@@ -205,7 +252,7 @@ to replay).
 
 - **Port (unchanged):** `domain/.../ports/data/PosDataService.kt`, `domain/.../ports/data/CrudDataService.kt`
 - **Relational adapter:** `data/.../implementations/PosDataServiceImpl.kt` (and the generic `CrudDataServiceImpl.kt`)
-- **Event-sourcing package:** `data/.../persistence/eventsourcing/`, holding the decorators, `EventStore`, `ReadModelProjector`, `EventSourcedWriter`, and the import/rebuild runners
+- **Event-sourcing package:** `data/.../persistence/eventsourcing/`, holding the decorators, `EventStore`, `ReadModelProjector`, `EventSourcedWriter`, `EventSourcedReverter`, and the import/rebuild runners
 - **Migration:** `data/.../db/migration/V8__create_events_table.sql`
 - **Toggle:** `campus-coffee.persistence.mode` (`PersistenceProperties`)
-- **Design notes:** `doc/2026-06-18_configurable-event-sourcing-persistence.md`
+- **Design notes:** `doc/2026-06-18_configurable-event-sourcing-persistence.md`, `doc/2026-07-01_revert-last-recorded-change.md`

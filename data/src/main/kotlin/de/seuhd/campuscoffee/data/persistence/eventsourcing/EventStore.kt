@@ -53,6 +53,20 @@ class EventStore(
     ): EventEntity = append(ChangeType.DELETE, entityTypeOf(domainType), mapOf("id" to id.toString()))
 
     /**
+     * Appends a compensating event carrying a stored body verbatim: the revert feature re-applies a prior
+     * snapshot as an UPDATE, or re-creates a removed entity as an INSERT, by replaying that snapshot's body.
+     *
+     * @param changeType the compensating change type (INSERT to re-create, UPDATE to restore)
+     * @param entityType the entity type label of the reverted entity
+     * @param body the stored snapshot body to replay
+     */
+    fun appendFromBody(
+        changeType: ChangeType,
+        entityType: String,
+        body: Map<String, Any?>
+    ): EventEntity = append(changeType, entityType, body)
+
+    /**
      * Removes every event for the given domain type; its read table is cleared separately.
      *
      * @param entityType the entity type label (the domain class's simple name)

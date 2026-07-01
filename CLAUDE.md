@@ -449,6 +449,7 @@ Base URL: `http://localhost:8080/api`.
 - `POST /pos/import/osm/{nodeId}?campus_type={type}` - Import from OpenStreetMap.
 - `PUT /pos/{id}` - Update POS.
 - `DELETE /pos/{id}` - Delete POS.
+- `POST /pos/{id}/revert?version={v}` - Revert the POS's last recorded change (event sourcing only).
 
 ### User Endpoints
 
@@ -458,6 +459,7 @@ Base URL: `http://localhost:8080/api`.
 - `POST /users` - Create user.
 - `PUT /users/{id}` - Update user.
 - `DELETE /users/{id}` - Delete user.
+- `POST /users/{id}/revert?version={v}` - Revert the user's last recorded change (event sourcing only).
 
 ### Review Endpoints
 
@@ -466,9 +468,18 @@ Base URL: `http://localhost:8080/api`.
 - `GET /reviews/filter?pos_id={id}&approved={true/false}` - Filter reviews.
 - `POST /reviews` - Create review.
 - `PUT /reviews/{id}/approve?user_id={id}` - Approve review (the approving user must differ from the author).
+- `POST /reviews/{id}/revert?version={v}` - Revert the review's last recorded change (event sourcing only).
 
 Notes on semantics:
 - `POST` rejects a request body that carries an `id` (400); the server assigns ids.
+- `POST /{resource}/{id}/revert` undoes the entity's last recorded change by appending a compensating event.
+  It works in event sourcing mode only (the relational adapter returns 400). It is optimistically guarded:
+  the required `version` query parameter is the version the client observed (exposed on every resource as a
+  read-only `version` field), and a stale value returns 409. Reverting a creation removes the resource (204).
+  Reverting an update restores the previous state (200). A revert is itself an appended event, so reverts
+  stack. Reverting a review's approval-driven change is refused (400), because the approval state is owned by
+  the approval workflow, not by an edit. Curating a revert requires the same role as the resource:
+  `MODERATOR` for POS and reviews, `ADMIN` for users.
 - `PUT /reviews/{id}` may change the review text (the author or a moderator may edit it); a review's POS is fixed at creation (re-pointing it returns 400) and its author is fixed
   (an update keeps the original author), and the approval state (`approvalCount`/`approved`) is owned by the
   approval workflow, so an update keeps it.

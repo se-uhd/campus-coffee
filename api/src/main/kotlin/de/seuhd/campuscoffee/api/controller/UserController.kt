@@ -19,6 +19,8 @@ import de.seuhd.campuscoffee.domain.ports.api.CrudService
 import de.seuhd.campuscoffee.domain.ports.api.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.groups.Default
@@ -128,4 +130,45 @@ class UserController(
         ResponseEntity.ok(
             userDtoMapper.fromDomain(userService.getByLoginName(loginName, currentUserProvider.currentUser()))
         )
+
+    /**
+     * Reverts the user's last recorded change, guarded by the version the caller observed. Returns 200 with
+     * the restored user, or 204 when the reverted change was the user's registration (the user is removed).
+     *
+     * @param id      the user whose last change is reverted
+     * @param version the version the caller observed; a stale value is rejected with 409
+     */
+    @Operation(
+        summary = "Revert the user's last recorded change (event sourcing only), guarded by the observed version."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "The user restored to its previous state."),
+            ApiResponse(
+                responseCode = "204",
+                description = "The reverted change was the user's registration; it was removed."
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Reverting is unavailable in relational mode, or the version is missing."
+            ),
+            ApiResponse(responseCode = "401", description = "Authentication is required."),
+            ApiResponse(responseCode = "403", description = "An admin role is required."),
+            ApiResponse(responseCode = "404", description = "No user with the provided ID could be found."),
+            ApiResponse(responseCode = "409", description = "The user was modified since the provided version.")
+        ]
+    )
+    @PostMapping("/{id}/revert")
+    fun revert(
+        @Parameter(description = "Unique identifier of the user to revert.", required = true)
+        @PathVariable id: UUID,
+        @Parameter(
+            description = "The version the caller observed; a stale value is rejected with 409.",
+            required = true
+        )
+        @RequestParam version: Long
+    ): ResponseEntity<UserDto> {
+        val reverted = userService.revertLastChange(id, version)
+        return reverted?.let { ResponseEntity.ok(userDtoMapper.fromDomain(it)) } ?: ResponseEntity.noContent().build()
+    }
 }

@@ -69,6 +69,16 @@ abstract class CrudServiceImpl<DOMAIN : DomainModel<ID>, ID>(
         log.info { "${domainClass.simpleName} with ID '$id' deleted." }
     }
 
+    override fun revertLastChange(
+        id: ID,
+        version: Long
+    ): DOMAIN? {
+        log.info { "Reverting the last change of ${domainClass.simpleName} with ID '$id' (version $version)..." }
+        val reverted = dataService().revertLastChange(id, version)
+        log.info { "Reverted the last change of ${domainClass.simpleName} with ID '$id'." }
+        return reverted
+    }
+
     private companion object {
         private val log = KotlinLogging.logger {}
     }

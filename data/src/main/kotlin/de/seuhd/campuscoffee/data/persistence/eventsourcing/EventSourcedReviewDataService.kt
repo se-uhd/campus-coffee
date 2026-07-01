@@ -1,6 +1,7 @@
 package de.seuhd.campuscoffee.data.persistence.eventsourcing
 import de.seuhd.campuscoffee.data.configuration.PersistenceProperties
 import de.seuhd.campuscoffee.data.implementations.ReviewDataServiceImpl
+import de.seuhd.campuscoffee.domain.exceptions.ValidationException
 import de.seuhd.campuscoffee.domain.model.objects.Review
 import de.seuhd.campuscoffee.domain.ports.data.ReviewDataService
 import org.springframework.beans.factory.annotation.Qualifier
@@ -29,7 +30,8 @@ import java.util.UUID
 )
 class EventSourcedReviewDataService(
     @param:Qualifier(ReviewDataServiceImpl.BEAN_NAME) private val delegate: ReviewDataService,
-    private val writer: EventSourcedWriter
+    private val writer: EventSourcedWriter,
+    private val reverter: EventSourcedReverter
 ) : ReviewDataService by delegate {
     @Transactional
     override fun upsert(domain: Review): Review =
@@ -45,4 +47,21 @@ class EventSourcedReviewDataService(
 
     @Transactional
     override fun clear() = writer.clear(Review::class, delegate::clear)
+
+    @Transactional
+    override fun revertLastChange(
+        id: UUID,
+        version: Long
+    ): Review? =
+        reverter.revertLastChange(Review::class, id, version, delegate::getById, { it.version }) { prior, current ->
+            // approvalCount/approved are owned by the approval workflow; reverting an approval-driven change
+            // would restore the old count while the review_approvals rows survive, desyncing the two
+            if (prior["approvalCount"].toString() != current["approvalCount"].toString() ||
+                prior["approved"].toString() != current["approved"].toString()
+            ) {
+                throw ValidationException(
+                    "Reverting review $id would change its approval state, which the approval workflow owns."
+                )
+            }
+        }
 }

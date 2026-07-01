@@ -1,5 +1,6 @@
 package de.seuhd.campuscoffee.domain.ports.data
 
+import de.seuhd.campuscoffee.domain.exceptions.ConcurrentUpdateException
 import de.seuhd.campuscoffee.domain.exceptions.DeletionConflictException
 import de.seuhd.campuscoffee.domain.exceptions.NotFoundException
 import de.seuhd.campuscoffee.domain.model.objects.DomainModel
@@ -55,4 +56,20 @@ interface CrudDataService<DOMAIN : DomainModel<ID>, ID> {
      * @throws DeletionConflictException if other data still references the entity
      */
     fun delete(id: ID)
+
+    /**
+     * Reverts an entity's last recorded change by appending a compensating event and projecting it,
+     * guarded so the revert proceeds only if the entity's current version still equals [version]. The
+     * relational adapter has no event log and rejects this; the event-sourcing adapter implements it.
+     *
+     * @param id the unique identifier of the entity whose last change is reverted
+     * @param version the version the caller observed; the guard rejects the revert if the entity moved past it
+     * @return the entity restored to its previous state, or null if the compensation removed it
+     * @throws NotFoundException if no entity exists with the given ID
+     * @throws ConcurrentUpdateException if the entity was modified since [version]
+     */
+    fun revertLastChange(
+        id: ID,
+        version: Long
+    ): DOMAIN?
 }

@@ -94,6 +94,11 @@ class SecurityConfig {
                 // Deleting a user is admin-only; editing another user is enforced in the domain (it depends
                 // on whether the target is the caller's own account), so PUT only requires authentication here.
                 authorize(HttpMethod.DELETE, "/api/users/**", hasRole("ADMIN"))
+                // Reverting a change is curation: a user revert is admin-only (like deleting a user), a review
+                // revert is moderator-only. A POS revert is already covered by the POS rules above. These must
+                // precede the authenticated catch-all, which would otherwise admit any logged-in user.
+                authorize(HttpMethod.POST, "/api/users/*/revert", hasRole("ADMIN"))
+                authorize(HttpMethod.POST, "/api/reviews/*/revert", hasRole("MODERATOR"))
                 // Every remaining write request requires an authenticated user; the domain decides the finer rules.
                 authorize(anyRequest, authenticated)
             }

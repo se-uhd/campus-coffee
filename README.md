@@ -49,11 +49,14 @@ the domain services, because they depend on which row is targeted.
 | `GET /api/users` (list all) | `ADMIN` |
 | `GET /api/users/{id}` | the user themselves or `ADMIN` |
 | `POST` / `PUT` / `DELETE /api/pos` (and the OSM import) | `MODERATOR` |
+| `POST /api/pos/{id}/revert` | `MODERATOR` |
 | `PUT /api/users/{id}` | the user themselves; changing roles needs `ADMIN` |
 | `DELETE /api/users/{id}` | `ADMIN` |
+| `POST /api/users/{id}/revert` | `ADMIN` |
 | `POST /api/reviews` | any authenticated user (authored as the caller) |
 | `PUT` / `DELETE /api/reviews/{id}` | the review's author or a `MODERATOR` |
 | `PUT /api/reviews/{id}/approve` | any authenticated user except the author |
+| `POST /api/reviews/{id}/revert` | `MODERATOR` |
 | `/actuator/health` | anyone (public) |
 | `/actuator/metrics`, `/actuator/env` | `ADMIN` |
 
@@ -269,6 +272,19 @@ curl --request DELETE -u maxmustermann:AmLtoD3r8lVdnwoLN1Nn -i http://localhost:
 **Note:** A POS that still has reviews cannot be deleted; the API answers `409 Conflict`. With the
 fixture data, `Schmelzpunkt` has reviews. Delete its reviews first or pick a POS without reviews (e.g.,
 `Bäcker Görtz` or `Café Botanik`).
+
+##### Revert POS
+
+Undo a POS's last recorded change (event sourcing only, the default mode). Pass the `version` you last
+observed (read it from a `GET`). A stale value is rejected with `409`. Reverting a creation removes the POS
+(`204`), while reverting an update restores the previous state (`200`):
+```shell
+curl -u maxmustermann:AmLtoD3r8lVdnwoLN1Nn -i --request POST 'http://localhost:8080/api/pos/bff9d9d5-ee3d-d852-62f6-0bdbcc5c8305/revert?version=0' # Bäcker Görtz (fixture version 0); its last change is the fixture creation, so this returns 204 and removes it
+```
+
+**Note:** Reverting needs the event log, so in relational mode
+(`--campus-coffee.persistence.mode=relational`) the API answers `400`. Reverting the creation of a POS that
+still has reviews answers `409 Conflict`.
 
 #### Users endpoints (/api/users)
 

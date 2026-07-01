@@ -20,6 +20,8 @@ import de.seuhd.campuscoffee.domain.ports.api.CrudService
 import de.seuhd.campuscoffee.domain.ports.api.PosService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -120,5 +122,46 @@ class PosController(
         val createdPos = posDtoMapper.fromDomain(posService.importFromOsmNode(nodeId, campusType))
         // the current request is the import URL, so the location must be built from the collection path
         return ResponseEntity.created(getLocation("/pos", createdPos.persistedId)).body(createdPos)
+    }
+
+    /**
+     * Reverts the POS's last recorded change, guarded by the version the caller observed. Returns 200 with
+     * the restored POS, or 204 when the reverted change was the POS's creation (the POS is removed).
+     *
+     * @param id      the POS whose last change is reverted
+     * @param version the version the caller observed; a stale value is rejected with 409
+     */
+    @Operation(
+        summary = "Revert the POS's last recorded change (event sourcing only), guarded by the observed version."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "The POS restored to its previous state."),
+            ApiResponse(
+                responseCode = "204",
+                description = "The reverted change was the POS's creation; it was removed."
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Reverting is unavailable in relational mode, or the version is missing."
+            ),
+            ApiResponse(responseCode = "401", description = "Authentication is required."),
+            ApiResponse(responseCode = "403", description = "A moderator role is required."),
+            ApiResponse(responseCode = "404", description = "No POS with the provided ID could be found."),
+            ApiResponse(responseCode = "409", description = "The POS was modified since the provided version.")
+        ]
+    )
+    @PostMapping("/{id}/revert")
+    fun revert(
+        @Parameter(description = "Unique identifier of the POS to revert.", required = true)
+        @PathVariable id: UUID,
+        @Parameter(
+            description = "The version the caller observed; a stale value is rejected with 409.",
+            required = true
+        )
+        @RequestParam version: Long
+    ): ResponseEntity<PosDto> {
+        val reverted = posService.revertLastChange(id, version)
+        return reverted?.let { ResponseEntity.ok(posDtoMapper.fromDomain(it)) } ?: ResponseEntity.noContent().build()
     }
 }

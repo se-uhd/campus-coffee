@@ -1,6 +1,7 @@
 package de.seuhd.campuscoffee.data.persistence.eventsourcing
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import de.seuhd.campuscoffee.domain.model.objects.Pos
 import de.seuhd.campuscoffee.domain.model.objects.Review
 import de.seuhd.campuscoffee.domain.model.objects.User
 import tools.jackson.core.JsonGenerator
@@ -20,36 +21,50 @@ import tools.jackson.module.kotlin.KotlinModule
  * The Kotlin module is registered because the domain models are immutable `data class`es: on a rebuild the
  * projector reconstructs them from a body, which needs Kotlin's primary-constructor binding.
  *
- * Two payload rules are enforced here:
+ * The event body records domain state, not read-model bookkeeping or secrets:
  * - the raw [User.password] is always dropped. It is only an input (the client sends it, the domain hashes
  *   it into [User.passwordHash] and discards it), so it is never stored and must never reach an event.
+ * - the optimistic-locking version ([Pos.version], [User.version], and a review's) is dropped. It is a
+ *   read-model counter the projection derives, so storing it in the append-only log would record a value
+ *   that a rebuild reconstructs anyway.
  * - a [Review] is flattened to its POS and author ids, so a review event records references rather than
  *   copies of the POS and the author (a copy would leak the author's `passwordHash`). A `User` event does
  *   keep `passwordHash`, so a login still works after a rebuild from the log.
  *
  * It is a singleton rather than a Spring `ObjectMapper` bean, with its event-specific serializers and
- * mixin kept off the application's general-purpose mapper.
+ * mixins kept off the application's general-purpose mapper.
  */
 object EventJsonMapper {
     val instance: JsonMapper = build()
 
     /**
      * Builds the event mapper: the Kotlin module, the serializer that flattens a review to ids, and the
-     * mixin that drops the raw password.
+     * mixins that drop the raw password and the read-model version.
      */
     private fun build(): JsonMapper =
         JsonMapper
             .builder()
             .addModule(KotlinModule.Builder().build())
             .addModule(SimpleModule().addSerializer(Review::class.java, ReviewEventSerializer()))
-            .addMixIn(User::class.java, UserSecretsMixin::class.java)
+            .addMixIn(Pos::class.java, PosEventMixin::class.java)
+            .addMixIn(User::class.java, UserEventMixin::class.java)
             .build()
 
-    /** Drops the raw [User.password] from a serialized user, so it can never reach an event (see the class doc). */
+    /** Drops the read-model [Pos.version] from a serialized POS, keeping it out of the event body. */
     @Suppress("unused")
-    private abstract class UserSecretsMixin {
+    private abstract class PosEventMixin {
+        @get:JsonIgnore
+        abstract val version: Long?
+    }
+
+    /** Drops the raw [User.password] and read-model [User.version] from a serialized user. */
+    @Suppress("unused")
+    private abstract class UserEventMixin {
         @get:JsonIgnore
         abstract val password: String?
+
+        @get:JsonIgnore
+        abstract val version: Long?
     }
 
     /**

@@ -10,11 +10,15 @@ import java.util.UUID
  * Immutable POS (Point of Sale) domain model. The house number and postal code are validated here to
  * demonstrate validation in the domain model; the remaining fields are validated in the API layer via
  * the DTOs.
+ *
+ * [version] is the optimistic-locking version, populated on read; a client echoes it to guard a revert
+ * against concurrent changes.
  */
 data class Pos(
     override val id: UUID? = null,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
+    val version: Long? = null,
     val name: String,
     val description: String,
     val type: PosType,

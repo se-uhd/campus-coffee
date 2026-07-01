@@ -127,21 +127,22 @@ object SystemTestUtils {
             .isEqualTo(expected)
     }
 
-    // A user's secrets never survive a response round-trip. The raw password is write-only and the stored
-    // hash is never serialized; both are ignored so a created or fetched user compares equal to its fixture.
-    private val secretFields = arrayOf("password", "passwordHash")
+    // Server-managed fields that never match a client-supplied fixture and so are ignored when comparing
+    // business field values: the timestamps and optimistic-locking version the server assigns, and a user's
+    // secrets (the raw password is write-only and the stored hash is never serialized).
+    private val serverManagedFields = arrayOf("createdAt", "updatedAt", "version", "password", "passwordHash")
 
-    /** Asserts two objects are equal, ignoring the timestamp (and user secret) fields. */
+    /** Asserts two objects are equal, ignoring the server-managed fields (timestamps, version, user secrets). */
     fun <T> assertEqualsIgnoringTimestamps(
         actual: T,
         expected: T
-    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt", *secretFields)
+    ) = assertEqualsIgnoringFields(actual, expected, *serverManagedFields)
 
-    /** Asserts two objects are equal, ignoring the id, timestamp (and user secret) fields. */
+    /** Asserts two objects are equal, ignoring the id and the server-managed fields (timestamps, version, secrets). */
     fun <T> assertEqualsIgnoringIdAndTimestamps(
         actual: T,
         expected: T
-    ) = assertEqualsIgnoringFields(actual, expected, "id", "createdAt", "updatedAt", *secretFields)
+    ) = assertEqualsIgnoringFields(actual, expected, "id", *serverManagedFields)
 
     /** Asserts two lists contain the same elements (any order), ignoring the given fields per element. */
     fun <T> assertEqualsIgnoringFields(
@@ -161,11 +162,11 @@ object SystemTestUtils {
             .containsExactlyInAnyOrderElementsOf(expected)
     }
 
-    /** Asserts two lists contain the same elements (any order), ignoring the timestamp (and user secret) fields. */
+    /** Asserts two lists contain the same elements (any order), ignoring the server-managed fields. */
     fun <T> assertEqualsIgnoringTimestamps(
         actual: List<T>,
         expected: List<T>
-    ) = assertEqualsIgnoringFields(actual, expected, "createdAt", "updatedAt", *secretFields)
+    ) = assertEqualsIgnoringFields(actual, expected, *serverManagedFields)
 
     /**
      * Reusable CRUD operations over [RestTestClient] against the server bound by [configureClient].
@@ -463,6 +464,35 @@ object SystemTestUtils {
                     .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody(dto))
+                    .exchange()
+            )
+
+        /** Reverts the last change via POST /{id}/revert?version=, returning the restored DTO after asserting 200. */
+        fun revert(
+            id: UUID,
+            version: Long,
+            credentials: Credentials = defaultCredentials
+        ): T =
+            body(
+                client
+                    .post()
+                    .uri("$basePath/{id}/revert?version={version}", id, version)
+                    .header(HttpHeaders.AUTHORIZATION, basicAuthHeader(credentials))
+                    .exchange(),
+                HttpStatus.OK
+            )
+
+        /** Reverts and returns the raw status code (to assert a 204, 400, 401, 403, 404, or 409). */
+        fun revertAndReturnStatusCode(
+            id: UUID,
+            version: Long,
+            credentials: Credentials? = defaultCredentials
+        ): Int =
+            status(
+                client
+                    .post()
+                    .uri("$basePath/{id}/revert?version={version}", id, version)
+                    .withOptionalAuth(credentials)
                     .exchange()
             )
     }

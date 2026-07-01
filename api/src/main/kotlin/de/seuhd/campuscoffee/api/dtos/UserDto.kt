@@ -24,6 +24,7 @@ data class UserDto(
     override val id: UUID? = null,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
+    val version: Long? = null,
     @field:NotNull
     @field:Size(min = 1, max = 255, message = "Login name must be between 1 and 255 characters long.")
     @field:Pattern(regexp = "\\w+", message = "Login name can only contain word characters: [a-zA-Z_0-9]+")

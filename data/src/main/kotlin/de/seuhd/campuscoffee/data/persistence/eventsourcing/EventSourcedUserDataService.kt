@@ -30,7 +30,8 @@ import java.util.UUID
 )
 class EventSourcedUserDataService(
     @param:Qualifier(UserDataServiceImpl.BEAN_NAME) private val delegate: UserDataService,
-    private val writer: EventSourcedWriter
+    private val writer: EventSourcedWriter,
+    private val reverter: EventSourcedReverter
 ) : UserDataService by delegate {
     @Transactional
     override fun upsert(domain: User): User =
@@ -46,4 +47,10 @@ class EventSourcedUserDataService(
 
     @Transactional
     override fun clear() = writer.clear(User::class, delegate::clear)
+
+    @Transactional
+    override fun revertLastChange(
+        id: UUID,
+        version: Long
+    ): User? = reverter.revertLastChange(User::class, id, version, delegate::getById, { it.version })
 }
