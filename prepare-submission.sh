@@ -52,6 +52,7 @@ for required in \
     "mise.toml" \
     "gradle/libs.versions.toml" \
     "REFLECTION.md" \
+    "REPORT.md"\
     "application/src/main/kotlin/de/seuhd/campuscoffee"
 do
     if [ ! -e "$required" ]; then
