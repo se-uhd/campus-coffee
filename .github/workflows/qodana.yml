@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Qodana compares against history for its baseline and quality gate
           persist-credentials: false # the scan never pushes back to the repository
