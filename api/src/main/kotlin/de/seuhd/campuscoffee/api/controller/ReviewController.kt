@@ -187,7 +187,7 @@ class ReviewController(
         ]
     )
     @PostMapping("/{id}/revert")
-    fun revert(
+    override fun revert(
         @Parameter(description = "Unique identifier of the review to revert.", required = true)
         @PathVariable id: UUID,
         @Parameter(
@@ -195,8 +195,5 @@ class ReviewController(
             required = true
         )
         @RequestParam version: Long
-    ): ResponseEntity<ReviewDto> {
-        val reverted = reviewService.revertLastChange(id, version)
-        return reverted?.let { ResponseEntity.ok(reviewDtoMapper.fromDomain(it)) } ?: ResponseEntity.noContent().build()
-    }
+    ): ResponseEntity<ReviewDto> = super.revert(id, version)
 }

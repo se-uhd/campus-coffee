@@ -73,6 +73,24 @@ abstract class CrudController<DOMAIN : DomainModel<ID>, DTO : Dto<ID>, ID : Any>
         return ResponseEntity.noContent().build()
     }
 
+    /**
+     * Reverts a resource's last recorded change, guarded by the version the caller observed. Returns 200
+     * with the restored resource, or 204 when the reverted change was its creation (the resource is
+     * removed). Available only in event-sourcing mode. Subclasses opt in by overriding this method with
+     * the HTTP mapping and OpenAPI annotations and delegating to `super`.
+     *
+     * @param id      the ID of the resource whose last change is reverted
+     * @param version the version the caller observed; a stale value is rejected with 409
+     */
+    open fun revert(
+        id: ID,
+        version: Long
+    ): ResponseEntity<DTO> =
+        service()
+            .revertLastChange(id, version)
+            ?.let { ResponseEntity.ok(mapper().fromDomain(it)) }
+            ?: ResponseEntity.noContent().build()
+
     /** Upserts a resource: maps DTO to domain, calls the service, and maps the result back to a DTO. */
     protected fun upsert(dto: DTO): DTO = mapper().fromDomain(service().upsert(mapper().toDomain(dto)))
 

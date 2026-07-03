@@ -159,7 +159,7 @@ class UserController(
         ]
     )
     @PostMapping("/{id}/revert")
-    fun revert(
+    override fun revert(
         @Parameter(description = "Unique identifier of the user to revert.", required = true)
         @PathVariable id: UUID,
         @Parameter(
@@ -167,8 +167,5 @@ class UserController(
             required = true
         )
         @RequestParam version: Long
-    ): ResponseEntity<UserDto> {
-        val reverted = userService.revertLastChange(id, version)
-        return reverted?.let { ResponseEntity.ok(userDtoMapper.fromDomain(it)) } ?: ResponseEntity.noContent().build()
-    }
+    ): ResponseEntity<UserDto> = super.revert(id, version)
 }

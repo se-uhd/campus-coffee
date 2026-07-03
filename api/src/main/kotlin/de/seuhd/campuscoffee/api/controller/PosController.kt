@@ -152,7 +152,7 @@ class PosController(
         ]
     )
     @PostMapping("/{id}/revert")
-    fun revert(
+    override fun revert(
         @Parameter(description = "Unique identifier of the POS to revert.", required = true)
         @PathVariable id: UUID,
         @Parameter(
@@ -160,8 +160,5 @@ class PosController(
             required = true
         )
         @RequestParam version: Long
-    ): ResponseEntity<PosDto> {
-        val reverted = posService.revertLastChange(id, version)
-        return reverted?.let { ResponseEntity.ok(posDtoMapper.fromDomain(it)) } ?: ResponseEntity.noContent().build()
-    }
+    ): ResponseEntity<PosDto> = super.revert(id, version)
 }
