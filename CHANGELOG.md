@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.7] - 2026-07-13
+
+- Add `doc/ROADMAP.md`, a running list of planned-but-unbuilt additions kept separate from the dated
+  design notes: an entry graduates into a dated `doc/YYYY-MM-DD_*.md` note plus a `CHANGELOG.md` entry when
+  it is picked up, and is removed from the roadmap in the same change. Its first entry is a browsable full
+  version history with revert to any past version (`GET /api/{res}/{id}/history` and
+  `POST /api/{res}/{id}/revert?to={seq}&version={v}`), the rework-free extension of the last-change revert
+  already anticipated by the revert design note's "History-ready seam."
+
 ## [0.5.6] - 2026-07-03
 
 - Add an event-sourced revert: `POST /api/{pos,users,reviews}/{id}/revert?version={v}` undoes an entity's last recorded change by appending a compensating event and projecting it, in one transaction, so the log stays append-only and only the read model changes. The compensation depends on the last event: a creation is undone by a `DELETE` (the resource is removed, `204`), an update by re-applying the immediately preceding snapshot (`200` with the restored resource). Because the compensation is itself an event, reverts stack (reverting a revert re-applies the change), and the projection reuses `ReadModelProjector`, so a revert inherits the same invariants as any write (undoing the creation of a still-referenced POS is a `409 DeletionConflictException`). The capability is exposed through the domain ports (`CrudService`/`CrudDataService.revertLastChange`) and implemented in the data layer by a new `EventSourcedReverter` (modeled on `EventSourcedWriter`) plus a per-entity `EventRepository.findByEntityTypeAndEntityIdOrderBySeqAsc` history query (using the existing `body ->> 'id'` index; no migration). The relational adapter has no log and rejects the operation with a `400 ValidationException`. Reverting a review's approval-driven change is refused (`400`), since the approval state is owned by the approval workflow, not by an edit; only text edits are revertible.
