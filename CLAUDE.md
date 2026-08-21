@@ -244,8 +244,8 @@ Dependencies and tools are kept current automatically:
   ecosystem, so bump those pins by hand. `--bump` is what makes the report actionable: plain `mise
   outdated` compares against the newest version the pin already matches, so an exact pin like gcloud is
   never reported, while a floating pin like `java = 'temurin-25'` reports patch drift of the installed JDK
-  that needs no edit at all. Declining a listed bump is a valid outcome — the JDK tracks the LTS line,
-  Gradle skips the milestone releases, and python follows what the gcloud components support.
+  that needs no edit at all. Declining a listed bump is a valid outcome — the JDK tracks the LTS line and
+  python follows what the gcloud components support.
 
 ## Database
 

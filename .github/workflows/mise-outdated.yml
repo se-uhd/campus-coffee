@@ -57,7 +57,7 @@ jobs:
           gh label create mise-outdated --color FBCA04 \
             --description "Outdated mise-managed tools" --force
 
-          body="$(printf '`mise outdated --bump` reports these `mise.toml` pins as raisable:\n\n| tool | pinned | bump to | latest |\n| --- | --- | --- | --- |\n%s\n\nBump the pins by hand, then run `mise install`. Declining a bump is a valid outcome: the JDK tracks the LTS line, Gradle skips the milestone releases, and python follows what the gcloud components support. This issue is refreshed weekly.' "$rows")"
+          body="$(printf '`mise outdated --bump` reports these `mise.toml` pins as raisable:\n\n| tool | pinned | bump to | latest |\n| --- | --- | --- | --- |\n%s\n\nBump the pins by hand, then run `mise install`. Declining a bump is a valid outcome: the JDK tracks the LTS line, and python follows what the gcloud components support. This issue is refreshed weekly.' "$rows")"
 
           existing="$(gh issue list --label mise-outdated --state open --json number --jq '.[0].number // empty')"
           if [ -n "$existing" ]; then
