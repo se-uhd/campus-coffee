@@ -1,6 +1,6 @@
 # Dependabot has no mise ecosystem, so this checks the mise-managed tools (the JDK, Gradle, gcloud, and
-# python pinned in mise.toml): each week it runs `mise outdated` and opens (or updates) an issue when a
-# tool is behind. It only notifies; bump the pins in mise.toml by hand.
+# python pinned in mise.toml): each week it runs `mise outdated --bump` and opens (or updates) an issue
+# listing the pins that can be raised. It only notifies; bump the pins in mise.toml by hand.
 name: mise outdated
 
 on:
@@ -22,31 +22,42 @@ jobs:
         with:
           install: false # only mise itself is needed; `mise outdated` does not need the tools installed
 
-      - name: Report outdated tools as an issue
+      - name: Report raisable pins as an issue
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # --bump reports the version a hand edit of mise.toml would move to; plain `mise outdated`
+          # compares against the newest version the pin already matches, which no edit can change.
+          # --local skips the runner's global mise config.
           # capture the exit code explicitly: a failing `mise outdated` (network error, regression in a
           # newer mise) must fail the workflow visibly instead of being mistaken for "all up to date"
           set +e
-          report="$(mise outdated)"
+          report="$(mise outdated --bump --local --json)"
           status=$?
           set -e
-          if [ "$status" -ne 0 ] && [ -z "$report" ]; then
-            echo "::error::mise outdated failed with exit code $status and produced no report."
+          if [ "$status" -ne 0 ]; then
+            echo "::error::mise outdated failed with exit code $status."
             exit 1
           fi
-          if [ -z "$report" ]; then
-            echo "All mise tools are up to date."
+
+          # a null "bump" means the pin already names the latest version
+          rows="$(printf '%s' "$report" | jq -r '
+            to_entries[]
+            | select(.value.bump != null)
+            | "| \(.key) | `\(.value.requested)` | `\(.value.bump)` | \(.value.latest) |"
+          ')"
+
+          if [ -z "$rows" ]; then
+            echo "Every mise.toml pin names the latest version."
             exit 0
           fi
-          echo "Outdated tools:"
-          echo "$report"
+          echo "Pins that can be raised:"
+          echo "$rows"
 
           gh label create mise-outdated --color FBCA04 \
             --description "Outdated mise-managed tools" --force
 
-          body="$(printf '`mise outdated` reports tools behind their latest versions:\n\n```\n%s\n```\n\nBump the pins in `mise.toml`, then run `mise install`. This issue is refreshed weekly.' "$report")"
+          body="$(printf '`mise outdated --bump` reports these `mise.toml` pins as raisable:\n\n| tool | pinned | bump to | latest |\n| --- | --- | --- | --- |\n%s\n\nBump the pins by hand, then run `mise install`. Declining a bump is a valid outcome: the JDK tracks the LTS line, Gradle skips the milestone releases, and python follows what the gcloud components support. This issue is refreshed weekly.' "$rows")"
 
           existing="$(gh issue list --label mise-outdated --state open --json number --jq '.[0].number // empty')"
           if [ -n "$existing" ]; then

@@ -1,5 +1,5 @@
 [tools]
 java = 'temurin-25'
 gradle = '9.5'
-gcloud = '575.0.1'
+gcloud = '581.0.0'
 python = '3.13' # required by some gcloud components
