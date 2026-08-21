@@ -50,6 +50,8 @@ target/
 ##########
 .gradle/
 build/
+# Kotlin compiler daemon session files, written to the root and to build-logic/
+.kotlin/
 # Gradle is provisioned via mise, not a wrapper; ignore IDE-generated wrapper files.
 gradlew
 gradlew.bat
