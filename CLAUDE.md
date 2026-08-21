@@ -239,9 +239,13 @@ Dependencies and tools are kept current automatically:
 - **Dependabot** (`.github/dependabot.yml`) opens weekly PRs for the GitHub Actions and the Gradle
   dependencies and plugins (resolved from the `libs.versions.toml` catalog), grouping minor and patch
   bumps and keeping majors separate.
-- A weekly **`mise-outdated`** workflow runs `mise outdated` and opens or updates an issue when the
-  mise-managed tools (the JDK, Gradle, gcloud, and python in `mise.toml`) fall behind. Dependabot has no
-  mise ecosystem, so bump those pins by hand.
+- A weekly **`mise-outdated`** workflow runs `mise outdated --bump` and opens or updates an issue listing
+  the `mise.toml` pins (the JDK, Gradle, gcloud, and python) that can be raised. Dependabot has no mise
+  ecosystem, so bump those pins by hand. `--bump` is what makes the report actionable: plain `mise
+  outdated` compares against the newest version the pin already matches, so an exact pin like gcloud is
+  never reported, while a floating pin like `java = 'temurin-25'` reports patch drift of the installed JDK
+  that needs no edit at all. Declining a listed bump is a valid outcome — the JDK tracks the LTS line and
+  python follows what the gcloud components support.
 
 ## Database
 
