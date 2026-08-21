@@ -99,8 +99,8 @@ the fixes with:
 gradle ktlintFormat
 ```
 
-Static analysis runs via detekt (`dev.detekt`, pinned at `2.0.0-alpha.5`; detekt 2.0 alphas require the exact
-Kotlin version they were built against, which is why Kotlin is pinned at 2.4.0). It is applied by the `kotlin-conventions`
+Static analysis runs via detekt (`dev.detekt`, pinned at `2.0.0-alpha.6`; detekt 2.0 alphas require the exact
+Kotlin version they were built against, which is why Kotlin is pinned at 2.4.10). It is applied by the `kotlin-conventions`
 plugin and wired into `check`, so `gradle build` and CI fail on findings. A per-module
 `detekt-baseline.xml` grandfathers pre-existing findings; regenerate it with `gradle detektBaseline`.
 
@@ -309,7 +309,7 @@ private helpers) keep conventional camelCase names.
 - **Kotlin** on JDK 25; nullability is expressed with Kotlin's nullable types.
 - **MapStruct** for object mapping (DTOs <-> domain models <-> entities), run via kapt.
 - **ktlint** for Kotlin formatting and linting (the official Kotlin style; `ktlintCheck` runs as part of `check`).
-- **detekt** for Kotlin static analysis (`dev.detekt` `2.0.0-alpha.5`, gated via `check`; a per-module baseline grandfathers existing findings), plus a custom `campus-coffee-kdoc` rule set in `:detekt-rules` enforcing KDoc on production code.
+- **detekt** for Kotlin static analysis (`dev.detekt` `2.0.0-alpha.6`, gated via `check`; a per-module baseline grandfathers existing findings), plus a custom `campus-coffee-kdoc` rule set in `:detekt-rules` enforcing KDoc on production code.
 - **Bean Validation** (Jakarta Validation) for input validation (validation happens in the controllers based on the DTOs, before mapping them to domain models).
 - **OpenAPI/Swagger** (SpringDoc) for API documentation.
 - **Spring `@HttpExchange`** declarative HTTP client over `RestClient` (OpenStreetMap API integration).
