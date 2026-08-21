@@ -67,7 +67,7 @@ Domain-specific controllers/services extend these base classes (e.g., `PosContro
 
 ### Prerequisites
 - Docker daemon must be running to use a database in the `dev` profile or to run the tests that use *Testcontainers*.
-- Java 25 and Gradle 9.5, provisioned via `mise.toml` (no Gradle wrapper). Run Gradle through mise
+- Java 25 and Gradle 9.7, provisioned via `mise.toml` (no Gradle wrapper). Run Gradle through mise
   (CI uses `jdx/mise-action`). The build pins a **Java 25 toolchain with no auto-download**, so a
   JDK 25 must be present on the machine — mise supplies it; without it the build fails with "no
   matching toolchains".
