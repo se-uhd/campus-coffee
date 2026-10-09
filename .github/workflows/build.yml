@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false # no step pushes back to the repository
 
-      - uses: jdx/mise-action@v4
+      - uses: jdx/mise-action@v5
 
       # Fail fast if the Java major version drifts across the version catalog, mise.toml, and the
       # Dockerfile before spending time on the full build.
